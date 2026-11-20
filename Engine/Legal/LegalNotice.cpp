@@ -33,7 +33,13 @@ namespace
         char byte = 0;
         while (file.get(byte))
         {
-            hash ^= static_cast<unsigned char>(byte);
+            unsigned char value = static_cast<unsigned char>(byte);
+            if (value == '\r')
+            {
+                if (file.peek() == '\n') file.get(byte);
+                value = '\n';
+            }
+            hash ^= value;
             hash *= 1099511628211ULL;
         }
 
@@ -62,7 +68,7 @@ namespace
     }
 
     constexpr const char* kLegalVersion = "2.0";
-    constexpr const char* kOfficialFingerprint = "B8B3EF61B132741C";
+    constexpr const char* kOfficialFingerprint = "D59FDC7137BA1A97";
 
     fs::path FindLegalDocumentPath()
     {
@@ -247,7 +253,7 @@ namespace
         if (!integrityValid)
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.35f, 0.25f, 1.0f));
-            ImGui::TextWrapped(UI("Documento legal não verificado. O aceite ficará bloqueado até que a versão oficial v1.3 seja restaurada."));
+            ImGui::TextWrapped(UI("Documento oficial não verificado. Restaure a cópia oficial dos avisos de licença para habilitar o aceite."));
             ImGui::PopStyleColor();
             ImGui::Separator();
         }
@@ -379,7 +385,7 @@ void LegalNotice::DrawModal(bool* p_open)
         ImGui::Separator();
         ImGui::Spacing();
 
-        // Exibe o documento consolidado v1.3 em um único lugar.
+        // Exibe o aviso oficial de licença e privacidade em um único lugar.
         RenderConsolidatedDocument();
 
         ImGui::Separator();
