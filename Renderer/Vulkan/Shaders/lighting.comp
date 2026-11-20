@@ -1,0 +1,61 @@
+#version 450
+
+// Compute shader para processamento de iluminação Vulkan
+// Calcula iluminação por-texel em paralelo
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(binding = 0, rgba16f) uniform image2D u_OutputImage;
+layout(binding = 1) uniform sampler2D u_DepthBuffer;
+layout(binding = 2) uniform sampler2D u_NormalBuffer;
+layout(binding = 3) uniform sampler2D u_PositionBuffer;
+
+struct LightData {
+    vec3 Position;
+    float Intensity;
+    vec3 Color;
+    float Range;
+    vec3 Direction;
+    float Padding;
+};
+
+layout(std140, binding = 4) uniform LightingUniforms {
+    LightData u_Lights[256];
+    int u_LightCount;
+    vec3 u_CameraPosition;
+    float u_AmbientIntensity;
+};
+
+void main() {
+    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
+    vec2 texCoords = vec2(pixelCoords) / vec2(imageSize(u_OutputImage));
+
+    // Ler buffers de entrada
+    vec3 normal = texture(u_NormalBuffer, texCoords).rgb;
+    vec3 worldPos = texture(u_PositionBuffer, texCoords).rgb;
+    float depth = texture(u_DepthBuffer, texCoords).r;
+
+    if (depth == 1.0) {
+        // Pixel no background (sky)
+        imageStore(u_OutputImage, pixelCoords, vec4(0.0));
+        return;
+    }
+
+    // Calcular iluminação
+    vec3 totalLight = vec3(u_AmbientIntensity);
+
+    for (int i = 0; i < u_LightCount; i++) {
+        LightData light = u_Lights[i];
+        vec3 lightDir = normalize(light.Position - worldPos);
+        float distance = length(light.Position - worldPos);
+        float attenuation = max(0.0, 1.0 - distance / light.Range);
+
+        // Diffuse
+        float NdotL = max(0.0, dot(normal, lightDir));
+        vec3 diffuse = light.Color * light.Intensity * NdotL * attenuation;
+
+        totalLight += diffuse;
+    }
+
+    imageStore(u_OutputImage, pixelCoords, vec4(totalLight, 1.0));
+}

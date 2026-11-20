@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="MaraeEngine.vcxproj" Id="efe7b4b2-c042-4cdc-ba4f-c882c2aabfcd" />
+</Solution>

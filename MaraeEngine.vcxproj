@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{efe7b4b2-c042-4cdc-ba4f-c882c2aabfcd}</ProjectGuid>
+    <RootNamespace>MaraeEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/FS /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Vulkan-Headers\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/FS /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Vulkan-Headers\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/FS /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Vulkan-Headers\include;$(ProjectDir)ThirdParty\ImGuiColorTextEdit;$(ProjectDir)ThirdParty\ImGuizmo;$(ProjectDir)ThirdParty\imgui-master\imgui-master;$(ProjectDir)ThirdParty\imgui-master\imgui-master\backends;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\glad\include;$(ProjectDir)ThirdParty\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;comdlg32.lib;shell32.lib;ole32.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/FS /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Vulkan-Headers\include;$(ProjectDir)ThirdParty\ImGuiColorTextEdit;$(ProjectDir)ThirdParty\ImGuizmo;$(ProjectDir)ThirdParty\imgui-master\imgui-master;$(ProjectDir)ThirdParty\imgui-master\imgui-master\backends;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\glad\include;$(ProjectDir)ThirdParty\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Assets\AssetDatabase\AssetDatabase.cpp" />
+    <ClCompile Include="Assets\MaterialDatabase\MaterialDatabase.cpp" />
+    <ClCompile Include="Camera\CameraController.cpp" />
+    <ClCompile Include="Core\Application.cpp" />
+    <ClCompile Include="Core\Diagnostics\DiagnosticLog.cpp" />
+    <ClCompile Include="Hub\ProjectHub.cpp" />
+    <ClCompile Include="Hub\ProjectManager.cpp" />
+    <ClCompile Include="Platform\LocalPlatform.cpp" />
+    <ClCompile Include="Core\Diagnostics\GpuMemoryTracker.cpp" />
+    <ClCompile Include="Core\Diagnostics\PerformaceMonitor.cpp" />
+    <ClCompile Include="Editor\EditorLayer.cpp" />
+    <ClCompile Include="Editor\EditorObjects\EditorObjects.cpp" />
+    <ClCompile Include="Editor\Exporter\GameExporter.cpp" />
+    <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
+    <ClCompile Include="Engine\Audio\AudioAcoustics.cpp" />
+    <ClCompile Include="Engine\Audio\AudioSceneSync.cpp" />
+    <ClCompile Include="Engine\Audio\miniaudio_impl.cpp" />
+    <ClCompile Include="Engine\Audio\Mixer\AudioMixer.cpp" />
+    <ClCompile Include="Engine\Audio\Mixer\AudioMixerGroup.cpp" />
+    <ClCompile Include="Engine\Audio\Source\AudioSourceComponent.cpp" />
+    <ClCompile Include="Engine\Audio\Environment\AudioEnvironmentManager.cpp" />
+    <ClCompile Include="Engine\Audio\Clip\AudioClip.cpp" />
+    <ClCompile Include="Engine\Audio\Clip\AudioAssetLibrary.cpp" />
+    <ClCompile Include="Engine\Audio\Clip\AudioDecoder.cpp" />
+    <ClCompile Include="Editor\HierarchyPanel\HierarchyPanel.cpp" />
+    <ClCompile Include="Editor\InspectorPanel\InspectorPanel.cpp" />
+    <ClCompile Include="Editor\Modeling\ModelingOperations.cpp" />
+    <ClCompile Include="Editor\Modeling\MeshTopology.cpp" />
+    <ClCompile Include="Editor\Modeling\ModelingToolset.cpp" />
+    <ClCompile Include="Editor\Modeling\MeshPainter.cpp" />
+    <ClCompile Include="Editor\Panels\AIPanel\AIPanel.cpp" />
+    <ClCompile Include="Editor\Panels\AIPanel\AIHttp.cpp" />
+    <ClCompile Include="Editor\Panels\AIPanel\NexoLocal.cpp" />
+    <ClCompile Include="Editor\MenuBar\MenuBar.cpp" />
+    <ClCompile Include="Editor\Panels\AssetBrowser\AssetBrowserPanel.cpp" />
+    <ClCompile Include="Editor\Panels\EditorSettings\EditorSettingsPanel.cpp" />
+    <ClCompile Include="Editor\Panels\Toolbar\ToolbarPanel.cpp" />
+    <ClCompile Include="Editor\Panels\Timeline\TimelinePanel.cpp" />
+    <ClCompile Include="Editor\Panels\PixelArtEditor\PixelArtEditorPanel.cpp" />
+    <ClCompile Include="Editor\Panels\PixelArtEditor\PixelArtTools.cpp" />
+    <ClCompile Include="Editor\Panels\PixelArtEditor\PixelCanvas.cpp" />
+    <ClCompile Include="Editor\Panels\PixelArtEditor\TextureExporter.cpp" />
+    <ClCompile Include="Editor\Panels\LogicCircuit\LogicCircuitPanel.cpp" />
+    <ClCompile Include="Editor\Picking\Picking.cpp" />
+    <ClCompile Include="Editor\Picking\Ray.cpp" />
+    <ClCompile Include="Editor\Thumbnails\ThumbnailManager.cpp" />
+    <ClCompile Include="Editor\UndoRedo\UndoRedoManager.cpp" />
+    <ClCompile Include="Editor\ViewportPanel\ViewportPanel.cpp" />
+    <ClCompile Include="Engine\Animation\Animation.cpp" />
+    <ClCompile Include="Engine\Assets\GUID\GUID.cpp" />
+    <ClCompile Include="Engine\Assets\ModelImporter\ModelImporter.cpp" />
+    <ClCompile Include="Engine\Lighting\LightingSystem.cpp" />
+    <ClCompile Include="Engine\Lighting\ShadowSystem.cpp" />
+    <ClCompile Include="Engine\Renderer\Material\Material.cpp" />
+    <ClCompile Include="Engine\Renderer\Material\MaterialSerializer.cpp" />
+    <ClCompile Include="Engine\Renderer\PostProcessing\PostProcessingShader.cpp" />
+    <ClCompile Include="Engine\Renderer\PostProcessing\PostProcessingPipeline.cpp" />
+    <ClCompile Include="Engine\Renderer\PostProcessing\VolumeBlender.cpp" />
+    <ClCompile Include="Engine\Renderer\PostProcessing\ColorGradingPresets.cpp" />
+    <ClCompile Include="Engine\Localization\Localization.cpp" />
+    <ClCompile Include="Engine\Legal\LegalNotice.cpp" />
+    <ClCompile Include="Engine\Systems\AnimationSystem.cpp" />
+    <ClCompile Include="Engine\Navigation\NavigationSystem.cpp" />
+    <ClCompile Include="Engine\AI\AISystem.cpp" />
+    <ClCompile Include="Engine\Input\InputMap.cpp" />
+    <ClCompile Include="Engine\Voxel\VoxelWorld.cpp" />
+    <ClCompile Include="Engine\Scripting\ScriptingRuntime.cpp" />
+    <ClCompile Include="Engine\Scripting\ScriptDebugger.cpp" />
+    <ClCompile Include="Engine\UI\UIRenderer.cpp" />
+    <ClCompile Include="Engine\UI\UIInputBridge.cpp" />
+    <ClCompile Include="Engine\DemoGames\RaceGame.cpp" />
+    <ClCompile Include="Engine\DemoGames\SurvivalGame.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Math\Matrix4\Matrix4.cpp" />
+    <ClCompile Include="Math\Vector2.cpp" />
+    <ClCompile Include="Math\Vector3.cpp" />
+    <ClCompile Include="Renderer\CameraRenderer\CameraRenderer.cpp" />
+    <ClCompile Include="Renderer\Framebuffer\Framebuffer.cpp" />
+    <ClCompile Include="Renderer\FullscreenQuad\FullscreenQuad.cpp" />
+    <ClCompile Include="Renderer\GridRenderer\GridRenderer.cpp" />
+    <ClCompile Include="Renderer\InstancedMesh\InstancedMesh.cpp" />
+    <ClCompile Include="Renderer\InstancedMesh\InstancedRenderer.cpp" />
+    <ClCompile Include="Renderer\MeshFactory\MeshFactory.cpp" />
+    <ClCompile Include="Renderer\Mesh\Mesh.cpp" />
+    <ClCompile Include="Renderer\Mesh\MeshCache.cpp" />
+    <ClCompile Include="Renderer\Mesh\PersistentBuffer.cpp" />
+    <ClCompile Include="Renderer\Renderer.cpp" />
+    <ClCompile Include="Renderer\RenderMemoryPool.cpp" />
+    <ClCompile Include="Renderer\VulkanRuntimeProbe.cpp" />
+    <ClCompile Include="Renderer\VulkanSmokeWindow.cpp" />
+    <ClCompile Include="Renderer\VulkanImGuiRenderer.cpp" />
+    <ClCompile Include="Renderer\Vulkan\VulkanDynamicLoader.cpp" />
+    <ClCompile Include="Renderer\Vulkan\VulkanShadowRenderer.cpp" />
+    <ClCompile Include="Renderer\Vulkan\VulkanLightingProcessor.cpp" />
+    <ClCompile Include="Renderer\Vulkan\VulkanMemoryManager.cpp" />
+    <ClCompile Include="Renderer\Vulkan\VulkanAccelerator.cpp" />
+    <ClCompile Include="Renderer\SceneRenderer\SceneRenderer.cpp" />
+    <ClCompile Include="Renderer\SceneRenderer\AdaptiveShadowMap.cpp" />
+    <ClCompile Include="Renderer\Sky\SkyRenderer.cpp" />
+    <ClCompile Include="Renderer\Shader\Shader.cpp" />
+    <ClCompile Include="Renderer\Texture\stb_image.cpp" />
+    <ClCompile Include="Renderer\Texture\Texture.cpp" />
+    <ClCompile Include="Renderer\Texture\TextureCache.cpp" />
+    <ClCompile Include="Renderer\Texture\TextureCompression.cpp" />
+    <ClCompile Include="Renderer\Texture\TextureLoader.cpp" />
+    <ClCompile Include="Renderer\TransformRenderer\TransformRenderer.cpp" />
+    <ClCompile Include="Renderer\Vertex\Vertex.cpp" />
+    <ClCompile Include="Scene\Camera\Camera.cpp" />
+    <ClCompile Include="Scene\Components\AnimationComponent.cpp" />
+    <ClCompile Include="Scene\Components\MeshComponet.cpp" />
+    <ClCompile Include="Scene\Entity\Entity.cpp" />
+    <ClCompile Include="Scene\Prefab\Prefab.cpp" />
+    <ClCompile Include="Scene\SceneCommands.cpp" />
+    <ClCompile Include="Scene\Scene\Scene.cpp" />
+    <ClCompile Include="Scene\SceneManager\SceneManager.cpp" />
+    <ClCompile Include="Scene\Transform\Transform.cpp" />
+    <ClCompile Include="ThirdParty\glad\src\glad.c" />
+    <ClCompile Include="ThirdParty\imgui-master\imgui-master\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="ThirdParty\imgui-master\imgui-master\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="ThirdParty\imgui-master\imgui-master\backends\imgui_impl_vulkan.cpp">
+      <PreprocessorDefinitions>IMGUI_IMPL_VULKAN_NO_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-master\imgui-master\imgui.cpp" />
+    <ClCompile Include="ThirdParty\imgui-master\imgui-master\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\imgui-master\imgui-master\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\imgui-master\imgui-master\imgui_widgets.cpp" />
+    <ClCompile Include="Editor\CodeEditor\CodeEditor.cpp" />
+    <ClCompile Include="Editor\CodeEditor\ScriptGuide.cpp" />
+    <ClCompile Include="ThirdParty\ImGuiColorTextEdit\TextEditor.cpp" />
+    <ClCompile Include="ThirdParty\ImGuizmo\ImGuizmo\src\ImGuizmo.cpp" />
+    <ClCompile Include="Window\Window.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Assets\AssetDatabase\AssetDatabase.h" />
+    <ClInclude Include="Assets\MaterialDatabase\MaterialDatabase.h" />
+    <ClInclude Include="Camera\CameraController.h" />
+    <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\Diagnostics\DiagnosticLog.h" />
+    <ClInclude Include="Hub\ProjectHub.h" />
+    <ClInclude Include="Hub\ProjectManager.h" />
+    <ClInclude Include="Core\Diagnostics\GpuMemoryTracker.h" />
+    <ClInclude Include="Core\Diagnostics\PerformanceMonitor.h" />
+    <ClInclude Include="Editor\Panels\AssetBrowser\AssetBrowserPanel.h" />
+    <ClInclude Include="Editor\EditorLayer.h" />
+    <ClInclude Include="Editor\EditorObjects\EditorObjects.h" />
+    <ClInclude Include="Editor\Exporter\GameExporter.h" />
+    <ClInclude Include="Editor\HierarchyPanel\HierarchyPanel.h" />
+    <ClInclude Include="Editor\InspectorPanel\InspectorPanel.h" />
+    <ClInclude Include="Editor\Modeling\MeshTopology.h" />
+    <ClInclude Include="Editor\Modeling\ModelingSelection.h" />
+    <ClInclude Include="Editor\Modeling\ModelingToolset.h" />
+    <ClInclude Include="Editor\Modeling\MeshPainter.h" />
+    <ClInclude Include="Editor\Panels\AIPanel\AIPanel.h" />
+    <ClInclude Include="Editor\Panels\AIPanel\AIHttp.h" />
+    <ClInclude Include="Editor\MenuBar\MenuBar.h" />
+    <ClInclude Include="Editor\Panels\AssetBrowser\AssetBrowserPanel.h" />
+    <ClInclude Include="Editor\Panels\EditorSettings\EditorSettingsPanel.h" />
+    <ClInclude Include="Editor\Panels\Toolbar\ToolbarPanel.h" />
+    <ClInclude Include="Editor\Panels\Timeline\TimelinePanel.h" />
+    <ClInclude Include="Editor\Panels\PixelArtEditor\PixelArtEditorPanel.h" />
+    <ClInclude Include="Editor\Panels\LogicCircuit\LogicCircuitPanel.h" />
+    <ClInclude Include="Editor\Panels\PixelArtEditor\PixelArtTools.h" />
+    <ClInclude Include="Editor\Panels\PixelArtEditor\PixelCanvas.h" />
+    <ClInclude Include="Editor\Panels\PixelArtEditor\TextureExporter.h" />
+    <ClInclude Include="Editor\Picking\AABB.h" />
+    <ClInclude Include="Editor\Picking\Picking.h" />
+    <ClInclude Include="Editor\Picking\Ray.h" />
+    <ClInclude Include="Editor\Snap\SnapSettings.h" />
+    <ClInclude Include="Editor\Thumbnails\ThumbnailManager.h" />
+    <ClInclude Include="Editor\UndoRedo\UndoRedoManager.h" />
+    <ClInclude Include="Editor\ViewportPanel\ViewportPanel.h" />
+    <ClInclude Include="Engine\Legal\LegalNotice.h" />
+    <ClInclude Include="Engine\Animation\Animation.h" />
+    <ClInclude Include="Engine\Assets\GUID\GUID.h" />
+    <ClInclude Include="Engine\Assets\ModelImporter\ModelImporter.h" />
+    <ClInclude Include="Engine\Lighting\AmbientLight.h" />
+    <ClInclude Include="Engine\Lighting\DirectionalLight.h" />
+    <ClInclude Include="Engine\Lighting\Light.h" />
+    <ClInclude Include="Engine\Lighting\LightingManager.h" />
+    <ClInclude Include="Engine\Lighting\LightingSettings.h" />
+    <ClInclude Include="Engine\Lighting\LightingSystem.h" />
+    <ClInclude Include="Engine\Lighting\ShadowSystem.h" />
+    <ClInclude Include="Engine\Lighting\PointLight.h" />
+    <ClInclude Include="Engine\Lighting\SpotLight.h" />
+    <ClInclude Include="Engine\Renderer\Material\Material.h" />
+    <ClInclude Include="Engine\Renderer\Material\MaterialSerializer.h" />
+    <ClInclude Include="Engine\Renderer\PostProcessing\CommonStructs.h" />
+    <ClInclude Include="Engine\Renderer\PostProcessing\PostProcessEffect.h" />
+    <ClInclude Include="Engine\Renderer\PostProcessing\PostProcessPipeline.h" />
+    <ClInclude Include="Engine\Renderer\PostProcessing\PostProcessingPipeline.h" />
+    <ClInclude Include="Engine\Renderer\PostProcessing\PostProcessingShader.h" />
+    <ClInclude Include="Engine\Renderer\PostProcessing\PostProcessingVolumeBlender.h" />
+    <ClInclude Include="Engine\Renderer\PostProcessing\VolumeBlender.h" />
+    <ClInclude Include="Engine\Renderer\PostProcessing\ColorGradingPresets.h" />
+    <ClInclude Include="Engine\Systems\AnimationSystem.h" />
+    <ClInclude Include="Engine\Voxel\VoxelWorld.h" />
+    <ClInclude Include="Engine\Scripting\ScriptingRuntime.h" />
+    <ClInclude Include="Engine\Scripting\ScriptDebugger.h" />
+    <ClInclude Include="Engine\UI\UIRenderer.h" />
+    <ClInclude Include="Engine\UI\UILayout.h" />
+    <ClInclude Include="Engine\UI\UIInteraction.h" />
+    <ClInclude Include="Engine\UI\UIInputBridge.h" />
+    <ClInclude Include="Engine\DemoGames\DemoGameContext.h" />
+    <ClInclude Include="Engine\DemoGames\RaceGame.h" />
+    <ClInclude Include="Engine\DemoGames\SurvivalGame.h" />
+    <ClInclude Include="Engine\UI\UIFontLibrary.h" />
+    <ClInclude Include="Engine\UI\UITextMarkup.h" />
+    <ClInclude Include="Scene\Components\UIComponent.h" />
+    <ClInclude Include="Engine\Input\InputMap.h" />
+    <ClInclude Include="Engine\Scripting\ScriptingAPI.h" />
+    <ClInclude Include="Engine\Paths\RuntimePaths.h" />
+    <ClInclude Include="Engine\Audio\AudioSystem.h" />
+    <ClInclude Include="Engine\Audio\AudioTypes.h" />
+    <ClInclude Include="Engine\Audio\AudioAcoustics.h" />
+    <ClInclude Include="Engine\Audio\AudioSceneSync.h" />
+    <ClInclude Include="Engine\Audio\Mixer\AudioMixer.h" />
+    <ClInclude Include="Engine\Audio\Mixer\AudioMixerGroup.h" />
+    <ClInclude Include="Engine\Audio\Source\AudioSourceComponent.h" />
+    <ClInclude Include="Engine\Audio\Listener\AudioListenerComponent.h" />
+    <ClInclude Include="Engine\Audio\Environment\AudioEnvironmentManager.h" />
+    <ClInclude Include="Engine\Audio\Debug\AudioDebugStats.h" />
+    <ClInclude Include="Engine\Audio\Clip\AudioClip.h" />
+    <ClInclude Include="Engine\Audio\Clip\AudioAssetLibrary.h" />
+    <ClInclude Include="Engine\Audio\Clip\AudioDecoder.h" />
+    <ClInclude Include="Math\Matrix4\Matrix4.h" />
+    <ClInclude Include="Math\Vector2.h" />
+    <ClInclude Include="Math\Vector3.h" />
+    <ClInclude Include="Renderer\CameraRenderer\CameraRenderer.h" />
+    <ClInclude Include="Renderer\Framebuffer\Framebuffer.h" />
+    <ClInclude Include="Renderer\FullscreenQuad\FullscreenQuad.h" />
+    <ClInclude Include="Renderer\GridRenderer\GridRenderer.h" />
+    <ClInclude Include="Renderer\InstancedMesh\InstancedMesh.h" />
+    <ClInclude Include="Renderer\InstancedMesh\InstancedRenderer.h" />
+    <ClInclude Include="Renderer\MeshFactory\MeshFactory.h" />
+    <ClInclude Include="Renderer\Mesh\Mesh.h" />
+    <ClInclude Include="Renderer\Mesh\MeshCache.h" />
+    <ClInclude Include="Renderer\Mesh\PersistentBuffer.h" />
+    <ClInclude Include="Renderer\Renderer.h" />
+    <ClInclude Include="Renderer\RenderMemoryPool.h" />
+    <ClInclude Include="Renderer\VulkanRuntimeProbe.h" />
+    <ClInclude Include="Renderer\VulkanSmokeWindow.h" />
+    <ClInclude Include="Renderer\VulkanImGuiRenderer.h" />
+    <ClInclude Include="Renderer\Vulkan\VulkanDynamicLoader.h" />
+    <ClInclude Include="Renderer\Vulkan\VulkanShadowRenderer.h" />
+    <ClInclude Include="Renderer\Vulkan\VulkanLightingProcessor.h" />
+    <ClInclude Include="Renderer\Vulkan\VulkanMemoryManager.h" />
+    <ClInclude Include="Renderer\Vulkan\VulkanAccelerator.h" />
+    <ClInclude Include="Renderer\GraphicsAPI.h" />
+    <ClInclude Include="Renderer\SceneRenderer\SceneRenderer.h" />
+    <ClInclude Include="Renderer\SceneRenderer\AdaptiveShadowMap.h" />
+    <ClInclude Include="Renderer\Shader\Shader.h" />
+    <ClInclude Include="Renderer\Texture\Texture.h" />
+    <ClInclude Include="Renderer\Texture\TextureCache.h" />
+    <ClInclude Include="Renderer\Texture\TextureCompression.h" />
+    <ClInclude Include="Renderer\Texture\TextureLoader.h" />
+    <ClInclude Include="Renderer\TransformRenderer\TransformRenderer.h" />
+    <ClInclude Include="Renderer\Vertex\Vertex.h" />
+    <ClInclude Include="Scene\Camera\Camera.h" />
+    <ClInclude Include="Scene\Components\AnimationComponent.h" />
+    <ClInclude Include="Scene\Components\AIComponent.h" />
+    <ClInclude Include="Engine\AI\AISystem.h" />
+    <ClInclude Include="Scene\Components\ColorComponent.h" />
+    <ClInclude Include="Scene\Components\AudioComponent.h" />
+    <ClInclude Include="Scene\Components\LightComponent.h" />
+    <ClInclude Include="Scene\Components\LocalLightComponent.h" />
+    <ClInclude Include="Scene\Components\GlobalLightComponent.h" />
+    <ClInclude Include="Scene\Components\MaterialComponent.h" />
+    <ClInclude Include="Scene\Components\MeshComponent.h" />
+    <ClInclude Include="Scene\Components\ScriptComponent.h" />
+    <ClInclude Include="Scene\Entity\Entity.h" />
+    <ClInclude Include="Scene\Prefab\Prefab.h" />
+    <ClInclude Include="Scene\SceneCommands.h" />
+    <ClInclude Include="Scene\Scene\Scene.h" />
+    <ClInclude Include="Scene\SceneManager\SceneManager.h" />
+    <ClInclude Include="Scene\Transform\Transform.h" />
+    <ClInclude Include="Editor\CodeEditor\CodeEditor.h" />
+    <ClInclude Include="Editor\CodeEditor\ScriptGuide.h" />
+    <ClInclude Include="ThirdParty\ImGuiColorTextEdit\TextEditor.h" />
+    <ClInclude Include="ThirdParty\ImGuizmo\ImGuizmo\src\ImGuizmo.h" />
+    <ClInclude Include="ThirdParty\stb\stb_image.h" />
+    <ClInclude Include="Window\Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="MaraeEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\.gitkeep" />
+    <None Include="Assets\Materials\.gitkeep" />
+    <None Include="Assets\Meshes\.gitkeep" />
+    <None Include="Assets\Prefabs\.gitkeep" />
+    <None Include="Assets\Textures\.gitkeep" />
+    <None Include="Engine\.gitkeep" />
+    <None Include="Engine\Editor\.gitkeep" />
+    <None Include="Engine\Scene\.gitkeep" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
+

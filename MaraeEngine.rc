@@ -1,0 +1,5 @@
+#include <windows.h>
+
+#define IDI_MARAE_ENGINE 101
+
+IDI_MARAE_ENGINE ICON "Editor\\Branding\\MaraeIcon.ico"

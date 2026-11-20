@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;1701;1702</NoWarn>
+    <RootNamespace>MaraeEngine.Scripting</RootNamespace>
+    <AssemblyName>MaraeEngine.Scripting</AssemblyName>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>..\ScriptRuntime\</OutputPath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Exclui pastas de testes/validação aninhadas, que não são fontes do runtime. -->
+  <ItemGroup>
+    <Compile Remove="**\obj\**\*.cs" />
+    <Compile Remove="**\bin\**\*.cs" />
+    <Compile Remove="_build_verify\**\*.cs" />
+    <Compile Remove="Tests\**\*.cs" />
+  </ItemGroup>
+
+</Project>
+
