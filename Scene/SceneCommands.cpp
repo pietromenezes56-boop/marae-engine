@@ -11,6 +11,8 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <regex>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 static std::string StripCopySuffix(const std::string& name, std::string& outBase)
 {
@@ -88,153 +90,158 @@ int SceneCommands::DuplicateEntity(
     Scene& scene,
     int index)
 {
-    auto& entities =
-        scene.GetEntities();
+    EntitySelectionSnapshot snapshot = CaptureSelection(scene, { index });
+    const std::vector<int> roots = PasteSelection(scene, snapshot);
+    return roots.empty() ? index : roots.front();
+}
 
-    if (index < 0 ||
-        index >= (int)entities.size())
+SceneCommands::EntitySelectionSnapshot SceneCommands::CaptureSelection(
+    Scene& scene,
+    const std::vector<int>& indices)
+{
+    EntitySelectionSnapshot snapshot;
+    const auto& entities = scene.GetEntities();
+    std::unordered_set<uint64_t> requested;
+    std::unordered_map<uint64_t, uint64_t> parentByChild;
+    for (int index : indices)
+        if (index >= 0 && index < static_cast<int>(entities.size()))
+            requested.insert(entities[static_cast<size_t>(index)].GetID());
+
+    for (const Entity& candidate : entities)
     {
-        return index;
+        if (candidate.GetParentID() != 0)
+            parentByChild[candidate.GetID()] = candidate.GetParentID();
+        for (uint64_t childID : candidate.GetChildrenIDs())
+            if (!parentByChild.contains(childID)) parentByChild[childID] = candidate.GetID();
     }
 
-    // Se a entidade é filha de um pai (ex: Model), o transform é local.
-    // Atualizar os transforms ANTES de copiar a origem para garantir que
-    // WorldMatrix esteja correta na referência da cena.
-    const bool hasParent = (entities[static_cast<size_t>(index)].GetParentID() != 0);
-    if (hasParent)
-        scene.UpdateTransforms();
-
-    // Capturar WorldMatrix antes de qualquer mutação (CreateEntity pode realocar).
-    glm::mat4 capturedWorld = entities[static_cast<size_t>(index)].GetTransform().WorldMatrix;
-
-    // CreateEntity pode realocar o vetor. Copie a origem depois de capturar a WorldMatrix.
-    Entity source = entities[static_cast<size_t>(index)];
-
-    std::string originalName = source.GetName();
-
-    std::string baseName;
-    StripCopySuffix(originalName, baseName);
-
-    int nextIdx = NextCopyIndex(entities, baseName);
-    std::string newName = baseName + " Copy " + std::to_string(nextIdx);
-
-    // Converter para coordenadas de mundo usando a WorldMatrix capturada,
-    // para que o clone seja criado na posição correta no espaço global.
-    Transform transform = source.GetTransform();
-    if (hasParent)
+    // Selecting both a Model and one of its children must only copy that subtree once.
+    std::unordered_set<uint64_t> selectedRoots;
+    for (int index : indices)
     {
-        glm::vec3 translation(0.0f), scale(1.0f), skew(0.0f);
-        glm::vec4 perspective(0.0f);
-        glm::quat rotation(1.0f, 0.0f, 0.0f, 0.0f);
-        if (glm::decompose(capturedWorld, scale, rotation, translation, skew, perspective))
+        if (index < 0 || index >= static_cast<int>(entities.size())) continue;
+        const uint64_t id = entities[static_cast<size_t>(index)].GetID();
+        if (!requested.contains(id) || !selectedRoots.insert(id).second) continue;
+        const Entity* entity = scene.FindEntityByID(id);
+        std::unordered_set<uint64_t> visited;
+        bool coveredBySelectedAncestor = false;
+        uint64_t parentID = 0;
+        if (entity)
         {
-            transform.Position = Vector3(translation.x, translation.y, translation.z);
-            transform.Rotation = glm::normalize(rotation);
-            transform.Scale    = Vector3(scale.x, scale.y, scale.z);
-            const glm::vec3 euler = glm::degrees(glm::eulerAngles(transform.Rotation));
-            transform.EulerRotation = Vector3(euler.x, euler.y, euler.z);
+            const auto parent = parentByChild.find(id);
+            if (parent != parentByChild.end()) parentID = parent->second;
+        }
+        for (; parentID != 0 && visited.insert(parentID).second;)
+        {
+            if (requested.contains(parentID))
+            {
+                coveredBySelectedAncestor = true;
+                break;
+            }
+            const auto parent = parentByChild.find(parentID);
+            parentID = parent == parentByChild.end() ? 0 : parent->second;
+        }
+        if (!coveredBySelectedAncestor && entity && !entity->IsEditorOnly())
+            snapshot.RootIDs.push_back(id);
+    }
+    if (snapshot.RootIDs.empty()) return snapshot;
+
+    std::unordered_set<uint64_t> captured;
+    std::vector<uint64_t> pending(snapshot.RootIDs.rbegin(), snapshot.RootIDs.rend());
+    while (!pending.empty())
+    {
+        const uint64_t id = pending.back();
+        pending.pop_back();
+        if (!captured.insert(id).second) continue;
+        const Entity* entity = scene.FindEntityByID(id);
+        if (!entity || entity->IsEditorOnly()) continue;
+        snapshot.Entities.push_back(*entity);
+        // Push in reverse scene order so the preorder matches the hierarchy order.
+        for (auto it = entities.rbegin(); it != entities.rend(); ++it)
+        {
+            const auto parent = parentByChild.find(it->GetID());
+            if (parent != parentByChild.end() && parent->second == id)
+                pending.push_back(it->GetID());
         }
     }
+    return snapshot;
+}
 
-    ColorComponent color =
-        source.GetColorComponent();
+std::vector<int> SceneCommands::PasteSelection(
+    Scene& scene,
+    const EntitySelectionSnapshot& snapshot,
+    std::vector<uint64_t>* createdIDs,
+    bool suffixRootNames)
+{
+    std::vector<int> rootIndices;
+    if (snapshot.Entities.empty() || snapshot.RootIDs.empty()) return rootIndices;
 
-    Entity& clone =
-        scene.CreateEntity();
+    auto& entities = scene.GetEntities();
+    std::unordered_set<uint64_t> rootIDs(snapshot.RootIDs.begin(), snapshot.RootIDs.end());
+    std::unordered_map<uint64_t, uint64_t> idRemap;
+    idRemap.reserve(snapshot.Entities.size());
+    std::vector<uint64_t> createdInOrder;
+    createdInOrder.reserve(snapshot.Entities.size());
 
-    clone.SetName(newName);
-
-    const auto& sourceMesh = source.GetMeshComponent().MeshData;
-    if (sourceMesh && sourceMesh->IsValid())
+    // Create every destination first, then restore internal links by remapped ID.
+    for (const Entity& source : snapshot.Entities)
     {
-        clone.GetMeshComponent().MeshData = std::make_shared<Mesh>();
-        clone.GetMeshComponent().MeshData->Create(
-            sourceMesh->GetVertices(),
-            sourceMesh->GetPrimitiveType(),
-            "SceneCommands::DuplicateMesh");
-    }
-    else
-    {
-        clone.GetMeshComponent().MeshData = MeshCache::CreateCubeInstance();
-    }
-    clone.GetMeshComponent().MeshPath =
-        source.GetMeshComponent().MeshPath;
-    // Preserve o tipo do primitivo interno. Sem isso, uma cópia de cilindro,
-    // esfera ou cone era salva como cubo na próxima abertura da cena.
-    clone.GetMeshComponent().PrimitiveType =
-        source.GetMeshComponent().PrimitiveType;
+        Entity& clone = scene.CreateEntity();
+        const uint64_t cloneID = clone.GetID();
+        clone.CopyDataFrom(source);
+        clone.SetParentID(0);
+        clone.GetChildrenIDs().clear();
+        idRemap[source.GetID()] = cloneID;
+        createdInOrder.push_back(cloneID);
 
-    clone.GetTransform() =
-        transform;
-
-    clone.GetColorComponent() =
-        color;
-
-    clone.PhysicsEnabled = source.PhysicsEnabled;
-    clone.UseGravity = source.UseGravity;
-    clone.IsStatic = source.IsStatic;
-    clone.ColliderEnabled = source.ColliderEnabled;
-    clone.IsTrigger = source.IsTrigger;
-    clone.Collider = source.Collider;
-    clone.Mass = source.Mass;
-    clone.Restitution = source.Restitution;
-    clone.Friction = source.Friction;
-    clone.PickingRadius = source.PickingRadius;
-    clone.Velocity = source.Velocity;
-    clone.AngularVelocity = source.AngularVelocity;
-    clone.ContinuousCollision = source.ContinuousCollision;
-    clone.FreezeRotation = source.FreezeRotation;
-    clone.Active = source.Active;
-    clone.Opacity = source.Opacity;
-    clone.CastShadows = source.CastShadows;
-    clone.RaycastTarget = source.RaycastTarget;
-    clone.Layer = source.Layer;
-    clone.Tag = source.Tag;
-    clone.GetScriptComponent() = source.GetScriptComponent();
-    clone.GetAnimationComponent() = source.GetAnimationComponent();
-    clone.GetMaterialComponent() = source.GetMaterialComponent();
-    clone.AudioAcousticGeometryEnabled = source.AudioAcousticGeometryEnabled;
-    clone.AudioOccluder = source.AudioOccluder;
-    clone.AudioTransmissionEnabled = source.AudioTransmissionEnabled;
-    clone.AudioTransmission = source.AudioTransmission;
-    clone.AudioAbsorption = source.AudioAbsorption;
-    clone.AudioDiffraction = source.AudioDiffraction;
-
-    if (source.HasLight())
-    {
-        clone.AddLight(source.GetLightComponent().Type);
-        clone.GetLightComponent() = source.GetLightComponent();
-    }
-    if (source.HasAudio())
-    {
-        clone.AddAudio();
-        clone.GetAudioComponent() = source.GetAudioComponent();
-        // A duplicated source must not control the original voice or reuse its
-        // public ID. Playback state is runtime-only and starts stopped.
-        clone.GetAudioComponent().RuntimeVoiceID = AUDIO_INVALID_VOICE;
-        clone.GetAudioComponent().PlayState = AudioPlayState::Stopped;
-        clone.GetAudioComponent().SourceID = "audio_" + std::to_string(clone.GetID());
-    }
-    if (source.HasUI())
-    {
-        clone.AddUI(source.GetUIComponent().Type);
-        clone.GetUIComponent() = source.GetUIComponent();
-    }
-    if (source.HasParticleSystem())
-    {
-        clone.AddParticleSystem();
-        clone.GetParticleSystem() = source.GetParticleSystem();
-    }
-    if (source.HasAI())
-    {
-        clone.AddAI();
-        clone.GetAIComponent() = source.GetAIComponent();
-        clone.GetAIComponent().ResetRuntime();
+        if (rootIDs.contains(source.GetID()) && suffixRootNames)
+        {
+            std::string baseName;
+            StripCopySuffix(source.GetName(), baseName);
+            clone.SetName(baseName + " Copy " + std::to_string(NextCopyIndex(entities, baseName)));
+        }
+        if (clone.HasAudio())
+        {
+            clone.GetAudioComponent().RuntimeVoiceID = AUDIO_INVALID_VOICE;
+            clone.GetAudioComponent().PlayState = AudioPlayState::Stopped;
+            clone.GetAudioComponent().SourceID = "audio_" + std::to_string(cloneID);
+        }
+        if (clone.HasAI()) clone.GetAIComponent().ResetRuntime();
     }
 
-    // O clone é criado na mesma posição do original
+    std::unordered_map<uint64_t, uint64_t> snapshotParentByChild;
+    for (const Entity& candidate : snapshot.Entities)
+    {
+        if (candidate.GetParentID() != 0)
+            snapshotParentByChild[candidate.GetID()] = candidate.GetParentID();
+        for (uint64_t childID : candidate.GetChildrenIDs())
+            if (!snapshotParentByChild.contains(childID)) snapshotParentByChild[childID] = candidate.GetID();
+    }
+    for (const Entity& source : snapshot.Entities)
+    {
+        const auto cloneIt = idRemap.find(source.GetID());
+        if (cloneIt == idRemap.end()) continue;
+        const auto sourceParent = snapshotParentByChild.find(source.GetID());
+        uint64_t parentID = sourceParent == snapshotParentByChild.end() ? 0 : sourceParent->second;
+        if (const auto internalParent = idRemap.find(parentID); internalParent != idRemap.end())
+            parentID = internalParent->second;
+        else if (parentID != 0 && !scene.FindEntityByID(parentID))
+            parentID = 0;
+        if (parentID != 0)
+            scene.SetParent(cloneIt->second, parentID, false);
+    }
 
-    return (int)scene.GetEntities().size() - 1;
+    for (uint64_t rootID : snapshot.RootIDs)
+        if (const auto it = idRemap.find(rootID); it != idRemap.end())
+        {
+            const auto indexIt = std::find_if(entities.begin(), entities.end(),
+                [&](const Entity& e) { return e.GetID() == it->second; });
+            if (indexIt != entities.end()) rootIndices.push_back(static_cast<int>(indexIt - entities.begin()));
+        }
+
+    if (createdIDs) *createdIDs = std::move(createdInOrder);
+    scene.UpdateTransforms();
+    return rootIndices;
 }
 
 Entity& SceneCommands::CreateCube(

@@ -450,10 +450,13 @@ bool Shader::Create()
         "    float penumbraWorld = occluderGap * tan(max(u_DirectionalSourceAngularRadius, 0.0));\n"
         "    vec2 worldTexelSize = max(u_ShadowCascadeWorldTexelSizes[cascade], vec2(0.00001));\n"
         "    vec2 radiusUV = vec2(penumbraWorld) / worldTexelSize * texelSize;\n"
-        "    radiusUV = max(radiusUV, texelSize * 0.5);\n"
+        // Keep directional PCF at the same minimum texel footprint as local
+        // lights; half a texel with four taps exposes the cascade's square grid.
+        "    radiusUV = max(radiusUV, texelSize * 1.9);\n"
         "    radiusUV = min(radiusUV, texelSize * float(textureSize(u_ShadowCascadeMaps[0], 0).x) * 0.125);\n"
         "    float penumbraTexels = max(radiusUV.x / texelSize.x, radiusUV.y / texelSize.y);\n"
-        "    int sampleCount = penumbraTexels < 1.5 ? 4 : (penumbraTexels < 6.0 ? 8 : 16);\n"
+        // Use only tap counts supported by the 16-point Poisson kernel.
+        "    int sampleCount = penumbraTexels < 5.0 ? 10 : (penumbraTexels < 8.0 ? 14 : 16);\n"
         "\n"
         "    // Kernel fixo em coordenadas do shadow map: sem ruído por pixel,\n"
         "    // reduz cintilação temporal enquanto a câmera se move.\n"
@@ -553,30 +556,26 @@ bool Shader::Create()
         "        max(blockerDepth, physicalSourceRadius);\n"
         "    penumbraWorld *= mix(0.25, 1.0, clamp(softness, 0.0, 1.0));\n"
         "    penumbraWorld = min(penumbraWorld, currentDepth * 0.25);\n"
-        "    float minFilterWorld = currentDepth * max(u_PointShadowAngularTexelSize * 0.5, 0.00001);\n"
+        // Cubemap texels subtendem a growing footprint on receivers farther from
+        // the light. A half-texel, four-tap cross leaves that footprint visibly
+        // blocky, so keep a one-texel minimum filter and use a disk kernel.
+        "    float minFilterWorld = currentDepth * max(u_PointShadowAngularTexelSize * 0.9, 0.00001);\n"
         "    float filterRadius = max(penumbraWorld, minFilterWorld) / max(currentDepth, 0.001);\n"
-        "    const vec3 sampleOffsets[16] = vec3[](\n"
-        "        vec3( 1.0,  0.0,  0.0), vec3(-1.0,  0.0,  0.0),\n"
-        "        vec3( 0.0,  1.0,  0.0), vec3( 0.0, -1.0,  0.0),\n"
-        "        vec3( 0.0,  0.0,  1.0), vec3( 0.0,  0.0, -1.0),\n"
-        "        vec3( 0.577, 0.577, 0.577), vec3(-0.577, -0.577, -0.577),\n"
-        "        vec3( 0.577, 0.577,-0.577), vec3(-0.577, -0.577, 0.577),\n"
-        "        vec3( 0.577,-0.577, 0.577), vec3(-0.577, 0.577, -0.577),\n"
-        "        vec3( 0.707, 0.707, 0.0), vec3(-0.707, -0.707, 0.0),\n"
-        "        vec3( 0.0, 0.707, 0.707), vec3( 0.0, -0.707, -0.707)\n"
-        "    );\n"
+        "    vec3 referenceUp = abs(centerDir.y) < 0.95 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);\n"
+        "    vec3 tangent = SafeNormalize(cross(centerDir, referenceUp), vec3(1.0, 0.0, 0.0));\n"
+        "    vec3 bitangent = cross(centerDir, tangent);\n"
         "\n"
         "    float shadow = 0.0;\n"
-        // Menos leituras de cubemap para bordas nítidas; sombras muito suaves
-        // mantêm o kernel completo para preservar a penumbra.
+        // Eight distributed taps remove the cross-shaped/blocky pattern from
+        // the old four-tap kernel; broader physical penumbrae use more taps.
         "    float penumbraTexels = filterRadius / max(u_PointShadowAngularTexelSize, 0.00001);\n"
-        "    int sampleCount = penumbraTexels < 1.5 ? 4 : (penumbraTexels < 6.0 ? 8 : 16);\n"
+        "    int sampleCount = penumbraTexels < 3.0 ? 8 : (penumbraTexels < 8.0 ? 12 : 16);\n"
         "    for (int i = 0; i < 16; ++i)\n"
         "    {\n"
         "        if (i >= sampleCount) break;\n"
-        "        vec3 sampleDirection = SafeNormalize(\n"
-         "            fragToLight + sampleOffsets[i] * filterRadius * max(currentDepth, 1.0),\n"
-         "            fragToLight);\n"
+        "        vec2 diskOffset = poissonDisk[i] * filterRadius;\n"
+        "        vec3 sampleDirection = SafeNormalize(centerDir +\n"
+        "            (tangent * diskOffset.x + bitangent * diskOffset.y), centerDir);\n"
         "        float closestDepth = SamplePointShadowDepth(index, sampleDirection) * farPlane;\n"
         "        float shadowOpacity = SamplePointShadowOpacity(index, sampleDirection);\n"
          "        shadowOpacity = clamp(shadowOpacity, 0.0, 1.0);\n"

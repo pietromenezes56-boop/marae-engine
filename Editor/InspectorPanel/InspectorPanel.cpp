@@ -57,6 +57,453 @@ Material* InspectorPanel::m_CurrentMaterial = nullptr;
 
 namespace
 {
+    struct InspectorBatchContext
+    {
+        Entity* Active = nullptr;
+        std::vector<Entity*> Targets;
+    };
+
+    InspectorBatchContext* g_InspectorBatchContext = nullptr;
+
+    template<typename T>
+    bool CopyEditedRange(T* sourceObject, T* targetObject,
+                         const void* editedAddress, std::size_t editedBytes)
+    {
+        if (!sourceObject || !targetObject || !editedAddress || editedBytes == 0)
+            return false;
+        const auto base = reinterpret_cast<std::uintptr_t>(sourceObject);
+        const auto address = reinterpret_cast<std::uintptr_t>(editedAddress);
+        if (address < base || address - base > sizeof(T) ||
+            editedBytes > sizeof(T) - (address - base))
+            return false;
+
+        const std::size_t offset = static_cast<std::size_t>(address - base);
+        for (Entity* target : g_InspectorBatchContext->Targets)
+        {
+            T* targetObject = nullptr;
+            if constexpr (std::is_same_v<T, Transform>)
+                targetObject = &target->GetTransform();
+            else
+                targetObject = target->GetComponent<T>();
+            if (!targetObject)
+                continue;
+            std::memcpy(reinterpret_cast<unsigned char*>(targetObject) + offset,
+                        editedAddress, editedBytes);
+        }
+        return true;
+    }
+
+    template<typename T>
+    bool CopyEditedComponentRange(const void* editedAddress, std::size_t editedBytes)
+    {
+        if (!g_InspectorBatchContext || !g_InspectorBatchContext->Active)
+            return false;
+        Entity& active = *g_InspectorBatchContext->Active;
+        T* component = nullptr;
+        if constexpr (std::is_same_v<T, Transform>)
+            component = &active.GetTransform();
+        else
+            component = active.GetComponent<T>();
+        return CopyEditedRange(component, component, editedAddress, editedBytes);
+    }
+
+    template<typename T>
+    bool IsComponentRangeMixed(const void* editedAddress, std::size_t editedBytes)
+    {
+        if (!g_InspectorBatchContext || !g_InspectorBatchContext->Active ||
+            !editedAddress || editedBytes == 0)
+            return false;
+        Entity& active = *g_InspectorBatchContext->Active;
+        T* source = nullptr;
+        if constexpr (std::is_same_v<T, Transform>)
+            source = &active.GetTransform();
+        else
+            source = active.GetComponent<T>();
+        if (!source)
+            return false;
+
+        const auto base = reinterpret_cast<std::uintptr_t>(source);
+        const auto address = reinterpret_cast<std::uintptr_t>(editedAddress);
+        if (address < base || address - base > sizeof(T) ||
+            editedBytes > sizeof(T) - (address - base))
+            return false;
+        const std::size_t offset = static_cast<std::size_t>(address - base);
+        for (Entity* target : g_InspectorBatchContext->Targets)
+        {
+            T* targetComponent = nullptr;
+            if constexpr (std::is_same_v<T, Transform>)
+                targetComponent = &target->GetTransform();
+            else
+                targetComponent = target->GetComponent<T>();
+            if (targetComponent && std::memcmp(
+                    reinterpret_cast<const unsigned char*>(source) + offset,
+                    reinterpret_cast<const unsigned char*>(targetComponent) + offset,
+                    editedBytes) != 0)
+                return true;
+        }
+        return false;
+    }
+
+    template<typename T>
+    bool IsEntityRangeMixed(T* field, const void* editedAddress, std::size_t editedBytes)
+    {
+        if (!g_InspectorBatchContext || !g_InspectorBatchContext->Active || !field ||
+            !editedAddress || editedBytes == 0)
+            return false;
+        const auto fieldAddress = reinterpret_cast<std::uintptr_t>(field);
+        const auto address = reinterpret_cast<std::uintptr_t>(editedAddress);
+        if (address < fieldAddress || address - fieldAddress > sizeof(T) ||
+            editedBytes > sizeof(T) - (address - fieldAddress))
+            return false;
+        const std::size_t innerOffset = static_cast<std::size_t>(address - fieldAddress);
+        Entity* active = g_InspectorBatchContext->Active;
+        const auto entityBase = reinterpret_cast<std::uintptr_t>(active);
+        if (fieldAddress < entityBase || fieldAddress - entityBase > sizeof(Entity) ||
+            sizeof(T) > sizeof(Entity) - (fieldAddress - entityBase))
+            return false;
+        const std::size_t fieldOffset = static_cast<std::size_t>(fieldAddress - entityBase);
+        for (Entity* target : g_InspectorBatchContext->Targets)
+        {
+            const auto* targetAddress = reinterpret_cast<const unsigned char*>(target) +
+                fieldOffset + innerOffset;
+            if (std::memcmp(editedAddress, targetAddress, editedBytes) != 0)
+                return true;
+        }
+        return false;
+    }
+
+    bool InspectorWidgetHasMixedValue(const void* editedAddress, std::size_t editedBytes)
+    {
+        if (!g_InspectorBatchContext || !g_InspectorBatchContext->Active ||
+            !editedAddress || editedBytes == 0)
+            return false;
+        if (IsComponentRangeMixed<ColorComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<Transform>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<MaterialComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<ScriptComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<AnimationComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<LightComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<LocalLightComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<AudioComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<GlobalLightComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<PostProcessingVolumeComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<CameraComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<TerrainComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<UIComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<ParticleSystemComponent>(editedAddress, editedBytes) ||
+            IsComponentRangeMixed<AIComponent>(editedAddress, editedBytes))
+            return true;
+
+        Entity& active = *g_InspectorBatchContext->Active;
+#define MARAE_CHECK_MIXED_ENTITY_FIELD(Field) \
+        if (IsEntityRangeMixed(&active.Field, editedAddress, editedBytes)) return true
+        MARAE_CHECK_MIXED_ENTITY_FIELD(PickingRadius);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(Active);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(Opacity);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(CastShadows);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(RaycastTarget);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(Layer);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(PhysicsEnabled);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(UseGravity);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(IsStatic);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(ColliderEnabled);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(IsTrigger);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(SelectionLocked);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(Collider);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(Mass);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(Restitution);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(Friction);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(Velocity);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(AngularVelocity);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(ContinuousCollision);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(FreezeRotation);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(AudioAcousticGeometryEnabled);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(AudioOccluder);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(AudioTransmissionEnabled);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(AudioTransmission);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(AudioAbsorption);
+        MARAE_CHECK_MIXED_ENTITY_FIELD(AudioDiffraction);
+#undef MARAE_CHECK_MIXED_ENTITY_FIELD
+        return false;
+    }
+
+    class InspectorMixedValueScope
+    {
+    public:
+        explicit InspectorMixedValueScope(bool mixed) : m_Mixed(mixed)
+        {
+            if (m_Mixed)
+                ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);
+        }
+        ~InspectorMixedValueScope()
+        {
+            if (m_Mixed)
+                ImGui::PopItemFlag();
+        }
+        InspectorMixedValueScope(const InspectorMixedValueScope&) = delete;
+        InspectorMixedValueScope& operator=(const InspectorMixedValueScope&) = delete;
+    private:
+        bool m_Mixed;
+    };
+
+    void DrawNeutralMixedCheckboxMark(bool mixed, bool checked)
+    {
+        const ImVec2 itemMin = ImGui::GetItemRectMin();
+        const float side = ImGui::GetFrameHeight();
+        const float inset = std::max(2.0f, side * 0.12f);
+        const float radius = ImGui::GetStyle().FrameRounding;
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        const ImVec2 boxMax(itemMin.x + side, itemMin.y + side);
+        drawList->AddRectFilled(itemMin, boxMax, IM_COL32(255, 255, 255, 255), radius);
+        drawList->AddRect(itemMin, boxMax, IM_COL32(48, 48, 48, 255), radius, 0, 1.0f);
+        if (mixed)
+        {
+            const float dashHeight = std::max(2.0f, side * 0.14f);
+            const float centerY = itemMin.y + side * 0.5f;
+            drawList->AddRectFilled(
+                ImVec2(itemMin.x + inset, centerY - dashHeight * 0.5f),
+                ImVec2(boxMax.x - inset, centerY + dashHeight * 0.5f),
+                IM_COL32(20, 20, 20, 255), radius * 0.25f);
+        }
+        else if (checked)
+        {
+            const float thickness = std::max(1.5f, side * 0.10f);
+            const ImVec2 p1(itemMin.x + side * 0.22f, itemMin.y + side * 0.52f);
+            const ImVec2 p2(itemMin.x + side * 0.43f, itemMin.y + side * 0.72f);
+            const ImVec2 p3(itemMin.x + side * 0.80f, itemMin.y + side * 0.29f);
+            drawList->AddLine(p1, p2, IM_COL32(20, 20, 20, 255), thickness);
+            drawList->AddLine(p2, p3, IM_COL32(20, 20, 20, 255), thickness);
+        }
+    }
+
+    template<typename T>
+    bool CopyEditedEntityField(T* field, const void* editedAddress, std::size_t editedBytes)
+    {
+        if (!g_InspectorBatchContext || !g_InspectorBatchContext->Active || !field)
+            return false;
+        Entity* active = g_InspectorBatchContext->Active;
+        const auto begin = reinterpret_cast<std::uintptr_t>(field);
+        const auto address = reinterpret_cast<std::uintptr_t>(editedAddress);
+        if (address < begin || address - begin > sizeof(T) ||
+            editedBytes > sizeof(T) - (address - begin))
+            return false;
+        const std::size_t offset = static_cast<std::size_t>(address - begin);
+        const auto entityBase = reinterpret_cast<std::uintptr_t>(active);
+        if (begin < entityBase || begin - entityBase > sizeof(Entity) ||
+            sizeof(T) > sizeof(Entity) - (begin - entityBase))
+            return false;
+        const std::size_t entityOffset = static_cast<std::size_t>(begin - entityBase);
+        for (Entity* target : g_InspectorBatchContext->Targets)
+            std::memcpy(reinterpret_cast<unsigned char*>(target) + entityOffset + offset,
+                        editedAddress, editedBytes);
+        return true;
+    }
+
+    void SyncInspectorWidgetEdit(const void* editedAddress, std::size_t editedBytes)
+    {
+        if (!g_InspectorBatchContext || !g_InspectorBatchContext->Active ||
+            !editedAddress || editedBytes == 0)
+            return;
+        Entity& active = *g_InspectorBatchContext->Active;
+
+        // Component-backed Inspector controls. Offsets are copied only inside
+        // the matching component type, and entities without that component
+        // are skipped, so optional component state is never fabricated.
+        if (CopyEditedComponentRange<ColorComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<Transform>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<MaterialComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<ScriptComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<AnimationComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<LightComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<LocalLightComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<AudioComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<GlobalLightComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<PostProcessingVolumeComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<CameraComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<TerrainComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<UIComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<ParticleSystemComponent>(editedAddress, editedBytes) ||
+            CopyEditedComponentRange<AIComponent>(editedAddress, editedBytes))
+            return;
+
+        // Physics and shared object properties live directly on Entity.
+#define MARAE_SYNC_ENTITY_FIELD(Field) \
+        if (CopyEditedEntityField(&active.Field, editedAddress, editedBytes)) return
+        MARAE_SYNC_ENTITY_FIELD(PickingRadius);
+        MARAE_SYNC_ENTITY_FIELD(Active);
+        MARAE_SYNC_ENTITY_FIELD(Opacity);
+        MARAE_SYNC_ENTITY_FIELD(CastShadows);
+        MARAE_SYNC_ENTITY_FIELD(RaycastTarget);
+        MARAE_SYNC_ENTITY_FIELD(Layer);
+        MARAE_SYNC_ENTITY_FIELD(PhysicsEnabled);
+        MARAE_SYNC_ENTITY_FIELD(UseGravity);
+        MARAE_SYNC_ENTITY_FIELD(IsStatic);
+        MARAE_SYNC_ENTITY_FIELD(ColliderEnabled);
+        MARAE_SYNC_ENTITY_FIELD(IsTrigger);
+        MARAE_SYNC_ENTITY_FIELD(SelectionLocked);
+        MARAE_SYNC_ENTITY_FIELD(Collider);
+        MARAE_SYNC_ENTITY_FIELD(Mass);
+        MARAE_SYNC_ENTITY_FIELD(Restitution);
+        MARAE_SYNC_ENTITY_FIELD(Friction);
+        MARAE_SYNC_ENTITY_FIELD(Velocity);
+        MARAE_SYNC_ENTITY_FIELD(AngularVelocity);
+        MARAE_SYNC_ENTITY_FIELD(ContinuousCollision);
+        MARAE_SYNC_ENTITY_FIELD(FreezeRotation);
+        MARAE_SYNC_ENTITY_FIELD(AudioAcousticGeometryEnabled);
+        MARAE_SYNC_ENTITY_FIELD(AudioOccluder);
+        MARAE_SYNC_ENTITY_FIELD(AudioTransmissionEnabled);
+        MARAE_SYNC_ENTITY_FIELD(AudioTransmission);
+        MARAE_SYNC_ENTITY_FIELD(AudioAbsorption);
+        MARAE_SYNC_ENTITY_FIELD(AudioDiffraction);
+#undef MARAE_SYNC_ENTITY_FIELD
+    }
+
+    class InspectorBatchScope
+    {
+    public:
+        InspectorBatchScope(Application& app, Entity& active)
+        {
+            const auto& selection = app.GetMultiSelectedEntities();
+            if (selection.size() < 2)
+                return;
+            m_Context.Active = &active;
+            auto& entities = app.GetScene().GetEntities();
+            std::unordered_set<int> seen;
+            for (int index : selection)
+            {
+                if (index < 0 || index >= static_cast<int>(entities.size()) ||
+                    !seen.insert(index).second)
+                    continue;
+                Entity& target = entities[static_cast<std::size_t>(index)];
+                if (&target != &active && !target.IsEditorOnly())
+                    m_Context.Targets.push_back(&target);
+            }
+            if (!m_Context.Targets.empty())
+            {
+                m_Previous = g_InspectorBatchContext;
+                g_InspectorBatchContext = &m_Context;
+            }
+        }
+
+        ~InspectorBatchScope()
+        {
+            if (g_InspectorBatchContext == &m_Context)
+                g_InspectorBatchContext = m_Previous;
+        }
+
+    private:
+        InspectorBatchContext m_Context;
+        InspectorBatchContext* m_Previous = nullptr;
+    };
+
+    class UniformScaleButtonStyle
+    {
+    public:
+        explicit UniformScaleButtonStyle(bool locked)
+            : m_Pushed(locked)
+        {
+            if (m_Pushed)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f, 0.48f, 0.78f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.58f, 0.90f, 1.0f));
+            }
+        }
+
+        ~UniformScaleButtonStyle()
+        {
+            if (m_Pushed)
+                ImGui::PopStyleColor(2);
+        }
+
+        UniformScaleButtonStyle(const UniformScaleButtonStyle&) = delete;
+        UniformScaleButtonStyle& operator=(const UniformScaleButtonStyle&) = delete;
+
+    private:
+        bool m_Pushed;
+    };
+
+    template<typename T, typename Callback>
+    void ForEachInspectorBatchComponent(Callback&& callback)
+    {
+        if (!g_InspectorBatchContext)
+            return;
+        for (Entity* target : g_InspectorBatchContext->Targets)
+            if (T* component = target->GetComponent<T>())
+                callback(*component);
+    }
+
+    template<typename Callback>
+    void ForEachInspectorBatchEntity(Callback&& callback)
+    {
+        if (!g_InspectorBatchContext)
+            return;
+        for (Entity* target : g_InspectorBatchContext->Targets)
+            callback(*target);
+    }
+}
+
+namespace ImGui
+{
+    inline bool BatchCheckbox(const char* label, bool* value)
+    {
+        const bool mixed = InspectorWidgetHasMixedValue(value, sizeof(*value));
+        bool changed = false;
+        {
+            InspectorMixedValueScope mixedScope(mixed);
+            changed = Checkbox(label, value);
+        }
+        if (changed) SyncInspectorWidgetEdit(value, sizeof(*value));
+        if (mixed) DrawNeutralMixedCheckboxMark(!changed, *value);
+        return changed;
+    }
+    inline bool BatchDragFloat(const char* label, float* value, float speed = 1.0f, float min = 0.0f, float max = 0.0f, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(*value))); const bool changed = DragFloat(label, value, speed, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(*value)); return changed; }
+    inline bool BatchDragFloat2(const char* label, float value[2], float speed = 1.0f, float min = 0.0f, float max = 0.0f, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(float) * 2)); const bool changed = DragFloat2(label, value, speed, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(float) * 2); return changed; }
+    inline bool BatchDragFloat3(const char* label, float value[3], float speed = 1.0f, float min = 0.0f, float max = 0.0f, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(float) * 3)); const bool changed = DragFloat3(label, value, speed, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(float) * 3); return changed; }
+    inline bool BatchDragFloat4(const char* label, float value[4], float speed = 1.0f, float min = 0.0f, float max = 0.0f, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(float) * 4)); const bool changed = DragFloat4(label, value, speed, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(float) * 4); return changed; }
+    inline bool BatchDragInt(const char* label, int* value, float speed = 1.0f, int min = 0, int max = 0, const char* format = "%d", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(*value))); const bool changed = DragInt(label, value, speed, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(*value)); return changed; }
+    inline bool BatchSliderFloat(const char* label, float* value, float min, float max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(*value))); const bool changed = SliderFloat(label, value, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(*value)); return changed; }
+    inline bool BatchSliderFloat2(const char* label, float value[2], float min, float max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(float) * 2)); const bool changed = SliderFloat2(label, value, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(float) * 2); return changed; }
+    inline bool BatchSliderFloat3(const char* label, float value[3], float min, float max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(float) * 3)); const bool changed = SliderFloat3(label, value, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(float) * 3); return changed; }
+    inline bool BatchSliderFloat4(const char* label, float value[4], float min, float max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(float) * 4)); const bool changed = SliderFloat4(label, value, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(float) * 4); return changed; }
+    inline bool BatchSliderInt(const char* label, int* value, int min, int max, const char* format = "%d", ImGuiSliderFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(*value))); const bool changed = SliderInt(label, value, min, max, format, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(*value)); return changed; }
+    inline bool BatchColorEdit3(const char* label, float value[3], ImGuiColorEditFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(float) * 3)); const bool changed = ColorEdit3(label, value, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(float) * 3); return changed; }
+    inline bool BatchColorEdit4(const char* label, float value[4], ImGuiColorEditFlags flags = 0)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(float) * 4)); const bool changed = ColorEdit4(label, value, flags); if (changed) SyncInspectorWidgetEdit(value, sizeof(float) * 4); return changed; }
+    inline bool BatchCombo(const char* label, int* value, const char* const items[], int count, int height = -1)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(*value))); const bool changed = Combo(label, value, items, count, height); if (changed) SyncInspectorWidgetEdit(value, sizeof(*value)); return changed; }
+    inline bool BatchCombo(const char* label, int* value, const char* (*getter)(void*, int), void* data, int count, int height = -1)
+    { InspectorMixedValueScope mixed(InspectorWidgetHasMixedValue(value, sizeof(*value))); const bool changed = Combo(label, value, getter, data, count, height); if (changed) SyncInspectorWidgetEdit(value, sizeof(*value)); return changed; }
+}
+
+#define Checkbox(...) BatchCheckbox(__VA_ARGS__)
+#define DragFloat(...) BatchDragFloat(__VA_ARGS__)
+#define DragFloat2(...) BatchDragFloat2(__VA_ARGS__)
+#define DragFloat3(...) BatchDragFloat3(__VA_ARGS__)
+#define DragFloat4(...) BatchDragFloat4(__VA_ARGS__)
+#define DragInt(...) BatchDragInt(__VA_ARGS__)
+#define SliderFloat(...) BatchSliderFloat(__VA_ARGS__)
+#define SliderFloat2(...) BatchSliderFloat2(__VA_ARGS__)
+#define SliderFloat3(...) BatchSliderFloat3(__VA_ARGS__)
+#define SliderFloat4(...) BatchSliderFloat4(__VA_ARGS__)
+#define SliderInt(...) BatchSliderInt(__VA_ARGS__)
+#define ColorEdit3(...) BatchColorEdit3(__VA_ARGS__)
+#define ColorEdit4(...) BatchColorEdit4(__VA_ARGS__)
+#define Combo(...) BatchCombo(__VA_ARGS__)
+
+
+namespace
+{
     void DrawHelpMarker(const char* id, const char* explanation);
 
     void DrawAudioMixerPanel(Application& app)
@@ -348,6 +795,7 @@ namespace
             if (ImGui::Combo(UI("Modo##UILayoutMode"), &layoutMode, layoutModes, IM_ARRAYSIZE(layoutModes)))
             {
                 ui.LayoutMode = static_cast<UILayoutMode>(std::clamp(layoutMode, 0, 3));
+                ForEachInspectorBatchComponent<UIComponent>([&](UIComponent& target) { target.LayoutMode = ui.LayoutMode; });
                 app.MarkDirty();
             }
             if (ui.LayoutMode != UILayoutMode::None || ui.ScrollViewEnabled)
@@ -445,6 +893,10 @@ namespace
                         if (ImGui::InputText(UI("##UIOption"), option, sizeof(option)))
                         {
                             ui.Options[i] = option;
+                            ForEachInspectorBatchComponent<UIComponent>([&](UIComponent& target)
+                            {
+                                if (i < target.Options.size()) target.Options[i] = option;
+                            });
                             app.MarkDirty();
                         }
                         ImGui::SameLine();
@@ -506,6 +958,7 @@ namespace
                 if (ImGui::InputText(UI("Caminho##UI"), image, sizeof(image)))
                 {
                     ui.ImagePath = image;
+                    ForEachInspectorBatchComponent<UIComponent>([&](UIComponent& target) { target.ImagePath = image; });
                     app.MarkDirty();
                 }
                 if (ImGui::Checkbox(UI("Nine-slice##UI"), &ui.NineSlice)) app.MarkDirty();
@@ -543,6 +996,7 @@ namespace
                                           ImVec2(-1.0f, 72.0f)))
             {
                 ui.Text = text;
+                ForEachInspectorBatchComponent<UIComponent>([&](UIComponent& target) { target.Text = text; });
                 app.MarkDirty();
             }
             int alignment = static_cast<int>(ui.TextAlignment);
@@ -550,6 +1004,7 @@ namespace
             if (ImGui::Combo(UI("Alinhamento##UI"), &alignment, alignments, 3))
             {
                 ui.TextAlignment = static_cast<UITextAlignment>(std::clamp(alignment, 0, 2));
+                ForEachInspectorBatchComponent<UIComponent>([&](UIComponent& target) { target.TextAlignment = ui.TextAlignment; });
                 app.MarkDirty();
             }
             if (ImGui::SliderFloat(UI("Tamanho da fonte##UI"), &ui.FontSize, 6.0f, 128.0f, "%.0f px")) app.MarkDirty();
@@ -1095,6 +1550,176 @@ bool InspectorPanel::IsModelingMode()
     return s_ModelingMode;
 }
 
+int InspectorPanel::RunBatchEditRegressionTests()
+{
+    int failures = 0;
+    auto check = [&](bool condition, const char* label)
+    {
+        std::cout << (condition ? "[InspectorBatchTest] PASS: " : "[InspectorBatchTest] FAIL: ")
+                  << label << std::endl;
+        if (!condition) ++failures;
+    };
+
+    Entity active;
+    Entity selected;
+    Entity notSelected;
+    InspectorBatchContext context;
+    context.Active = &active;
+    context.Targets = { &selected };
+    InspectorBatchContext* previous = g_InspectorBatchContext;
+    g_InspectorBatchContext = &context;
+
+    const auto checkFloat = [&](float* source, float* target, float* untouched,
+                                const char* label)
+    {
+        constexpr float editedValue = 0.731f;
+        *source = editedValue;
+        *target = 0.217f;
+        *untouched = 0.413f;
+        SyncInspectorWidgetEdit(source, sizeof(float));
+        check(std::abs(*target - editedValue) < 0.0001f &&
+              std::abs(*untouched - 0.413f) < 0.0001f, label);
+    };
+    const auto checkBool = [&](bool* source, bool* target, bool* untouched,
+                               const char* label)
+    {
+        *source = true;
+        *target = false;
+        *untouched = false;
+        const std::string mixedLabel = std::string(label) + " mostra valor misto";
+        check(InspectorWidgetHasMixedValue(source, sizeof(bool)), mixedLabel.c_str());
+        SyncInspectorWidgetEdit(source, sizeof(bool));
+        const std::string appliedLabel = std::string(label) + " aplica a todos selecionados";
+        check(*target && !*untouched &&
+              !InspectorWidgetHasMixedValue(source, sizeof(bool)), appliedLabel.c_str());
+    };
+
+    checkBool(&active.IsStatic, &selected.IsStatic, &notSelected.IsStatic, "Estático");
+    checkFloat(&active.Mass, &selected.Mass, &notSelected.Mass,
+               "campo de física do objeto copia apenas para a seleção");
+    checkFloat(&active.GetColorComponent().Color.X,
+               &selected.GetColorComponent().Color.X,
+               &notSelected.GetColorComponent().Color.X,
+               "cor do mesh sincroniza por componente");
+    checkFloat(&active.GetMaterialComponent().MaterialData.Roughness,
+               &selected.GetMaterialComponent().MaterialData.Roughness,
+               &notSelected.GetMaterialComponent().MaterialData.Roughness,
+               "material sincroniza apenas o campo editado");
+    check(std::abs(selected.GetMaterialComponent().MaterialData.EmissionStrength -
+                   active.GetMaterialComponent().MaterialData.EmissionStrength) < 0.0001f,
+          "outros campos do material preservam seus valores");
+
+    active.AddLight(); selected.AddLight(); notSelected.AddLight();
+    checkBool(&active.GetLightComponent().Enabled, &selected.GetLightComponent().Enabled,
+              &notSelected.GetLightComponent().Enabled, "Light ativada");
+    checkFloat(&active.GetLightComponent().Intensity,
+               &selected.GetLightComponent().Intensity,
+               &notSelected.GetLightComponent().Intensity,
+               "luz sincroniza intensidade sem alterar objeto fora da seleção");
+    active.AddLocalLight(); selected.AddLocalLight(); notSelected.AddLocalLight();
+    checkBool(&active.GetLocalLightComponent().ReceiveShadows,
+              &selected.GetLocalLightComponent().ReceiveShadows,
+              &notSelected.GetLocalLightComponent().ReceiveShadows,
+              "Local Light receber sombras");
+    checkFloat(&active.GetLocalLightComponent().Roughness,
+               &selected.GetLocalLightComponent().Roughness,
+               &notSelected.GetLocalLightComponent().Roughness,
+               "LocalLight sincroniza o campo editado");
+    active.AddAudio(); selected.AddAudio(); notSelected.AddAudio();
+    checkBool(&active.GetAudioComponent().Loop, &selected.GetAudioComponent().Loop,
+              &notSelected.GetAudioComponent().Loop, "Áudio em loop");
+    checkFloat(&active.GetAudioComponent().Volume,
+               &selected.GetAudioComponent().Volume,
+               &notSelected.GetAudioComponent().Volume,
+               "áudio sincroniza volume por componente");
+    active.SetGlobalLight(true); selected.SetGlobalLight(true); notSelected.SetGlobalLight(true);
+    checkBool(&active.GetGlobalLightComponent().FilmGrainEnabled,
+              &selected.GetGlobalLightComponent().FilmGrainEnabled,
+              &notSelected.GetGlobalLightComponent().FilmGrainEnabled,
+              "Global Light film grain");
+    checkFloat(&active.GetTransform().Position.X,
+               &selected.GetTransform().Position.X,
+               &notSelected.GetTransform().Position.X,
+               "transform sincroniza posição sem alterar objeto fora da seleção");
+    checkFloat(&active.GetGlobalLightComponent().Lighting.AmbientIntensity,
+               &selected.GetGlobalLightComponent().Lighting.AmbientIntensity,
+               &notSelected.GetGlobalLightComponent().Lighting.AmbientIntensity,
+               "Global Light sincroniza parâmetros comuns");
+    active.AddPostProcessingVolume(); selected.AddPostProcessingVolume(); notSelected.AddPostProcessingVolume();
+    checkBool(&active.GetPostProcessingVolume().IsGlobal,
+              &selected.GetPostProcessingVolume().IsGlobal,
+              &notSelected.GetPostProcessingVolume().IsGlobal,
+              "Volume de pós-processamento global");
+    checkFloat(&active.GetPostProcessingVolume().BlendWeight,
+               &selected.GetPostProcessingVolume().BlendWeight,
+               &notSelected.GetPostProcessingVolume().BlendWeight,
+               "volume de pós-processamento sincroniza parâmetros");
+    active.AddCamera(); selected.AddCamera(); notSelected.AddCamera();
+    checkBool(&active.GetCameraComponent().Orthographic, &selected.GetCameraComponent().Orthographic,
+              &notSelected.GetCameraComponent().Orthographic, "Câmera ortográfica");
+    checkFloat(&active.GetCameraComponent().FieldOfView,
+               &selected.GetCameraComponent().FieldOfView,
+               &notSelected.GetCameraComponent().FieldOfView,
+               "câmera sincroniza campo de visão");
+    active.AddTerrain(3); selected.AddTerrain(3); notSelected.AddTerrain(3);
+    checkFloat(&active.GetTerrainComponent().HeightScale,
+               &selected.GetTerrainComponent().HeightScale,
+               &notSelected.GetTerrainComponent().HeightScale,
+               "terreno sincroniza parâmetros");
+    active.AddUI(UIElementType::Frame); selected.AddUI(UIElementType::Frame); notSelected.AddUI(UIElementType::Frame);
+    checkBool(&active.GetUIComponent().ClipsContent, &selected.GetUIComponent().ClipsContent,
+              &notSelected.GetUIComponent().ClipsContent, "UI recortar conteúdo");
+    checkFloat(&active.GetUIComponent().FontSize,
+               &selected.GetUIComponent().FontSize,
+               &notSelected.GetUIComponent().FontSize,
+               "UI 2D sincroniza o campo editado");
+    active.AddParticleSystem(); selected.AddParticleSystem(); notSelected.AddParticleSystem();
+    checkBool(&active.GetParticleSystem().Lit, &selected.GetParticleSystem().Lit,
+              &notSelected.GetParticleSystem().Lit, "Partículas iluminadas");
+    checkFloat(&active.GetParticleSystem().EmissionRate,
+               &selected.GetParticleSystem().EmissionRate,
+               &notSelected.GetParticleSystem().EmissionRate,
+               "partículas sincronizam taxa de emissão");
+    active.AddAI(); selected.AddAI(); notSelected.AddAI();
+    checkBool(&active.GetAIComponent().SightEnabled, &selected.GetAIComponent().SightEnabled,
+              &notSelected.GetAIComponent().SightEnabled, "IA visão ativa");
+    checkFloat(&active.GetAIComponent().SightRadius,
+               &selected.GetAIComponent().SightRadius,
+               &notSelected.GetAIComponent().SightRadius,
+               "IA sincroniza alcance de visão");
+    checkBool(&active.GetScriptComponent().Enabled,
+              &selected.GetScriptComponent().Enabled,
+              &notSelected.GetScriptComponent().Enabled,
+              "Script C# sincroniza estado sem alterar objeto fora da seleção");
+    checkBool(&active.GetAnimationComponent().PlayOnStart,
+              &selected.GetAnimationComponent().PlayOnStart,
+              &notSelected.GetAnimationComponent().PlayOnStart,
+              "animação sincroniza flag booleana");
+
+    bool lockFromFree = false;
+    {
+        UniformScaleButtonStyle style(lockFromFree);
+        lockFromFree = true; // simula clicar em Escala livre -> proporcional
+    }
+    check(lockFromFree, "estilo do botão desempilha corretamente ao ativar proporção");
+    bool freeFromLock = true;
+    {
+        UniformScaleButtonStyle style(freeFromLock);
+        freeFromLock = false; // simula clicar em proporcional -> Escala livre
+    }
+    check(!freeFromLock, "estilo do botão desempilha corretamente ao liberar proporção");
+
+    Entity withoutLight;
+    context.Targets = { &withoutLight };
+    SyncInspectorWidgetEdit(&active.GetLightComponent().Intensity, sizeof(float));
+    check(!withoutLight.HasLight(), "componentes opcionais ausentes não são criados ao editar em lote");
+
+    g_InspectorBatchContext = previous;
+    std::cout << "[InspectorBatchTest] " << (failures == 0 ? "SUITE PASSOU" : "SUITE FALHOU")
+              << " (" << failures << " falha(s))" << std::endl;
+    return failures;
+}
+
 void InspectorPanel::SetModelingMode(bool enabled)
 {
     s_ModelingMode = enabled;
@@ -1434,6 +2059,13 @@ void InspectorPanel::DrawScriptInspector(
                         script.ScriptAssemblyQualifiedTypeName.clear();
                         script.Enabled = true;
                         script.Dirty = true;
+                        ForEachInspectorBatchComponent<ScriptComponent>([&](ScriptComponent& target)
+                        {
+                            target.ScriptPath = script.ScriptPath;
+                            target.ScriptAssemblyQualifiedTypeName.clear();
+                            target.Enabled = true;
+                            target.Dirty = true;
+                        });
                         app.MarkDirty();
                         if (app.GetEditorState() == Application::EditorState::Play)
                             ScriptingRuntime::Instance().ReloadAll();
@@ -1587,6 +2219,7 @@ void InspectorPanel::DrawLightInspector(
     {
         currentType = std::clamp(currentType, 0, 3);
         light.Type = static_cast<LightType>(currentType);
+        ForEachInspectorBatchComponent<LightComponent>([&](LightComponent& target) { target.Type = light.Type; });
         app.MarkDirty();
     }
 
@@ -1596,6 +2229,10 @@ void InspectorPanel::DrawLightInspector(
         light.Color[0] = col[0];
         light.Color[1] = col[1];
         light.Color[2] = col[2];
+        ForEachInspectorBatchComponent<LightComponent>([&](LightComponent& target)
+        {
+            std::copy(std::begin(col), std::end(col), target.Color);
+        });
         app.MarkDirty();
     }
 
@@ -2084,6 +2721,7 @@ void InspectorPanel::DrawPhysicsInspector(
     {
         entity.Collider = static_cast<Entity::ColliderShape>(
             std::clamp(colliderShape, 0, app.Is2DWorldMode() ? 1 : 6));
+        ForEachInspectorBatchEntity([&](Entity& target) { target.Collider = entity.Collider; });
         app.MarkDirty();
     }
     if (!app.Is2DWorldMode() && entity.Collider == Entity::ColliderShape::Mesh)
@@ -2686,19 +3324,20 @@ void InspectorPanel::Draw(Application& app)
             return;
         }
 
+        Entity& entity = app.GetSelectedEntity();
+        InspectorBatchScope batchInspector(app, entity);
         const auto& multiSelection = app.GetMultiSelectedEntities();
         if (multiSelection.size() > 1)
         {
             ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.04f, 0.10f, 0.20f, 0.95f));
             ImGui::BeginChild("##MultiSelectionSummary", ImVec2(0.0f, 48.0f), true);
             ImGui::Text(UI("%zu objetos selecionados"), multiSelection.size());
-            ImGui::TextDisabled("A entidade ativa é usada como referência. Transformações são aplicadas ao conjunto.");
+            ImGui::TextDisabled("Traço = valores diferentes. Edite o campo para aplicar aos selecionados compatíveis.");
             ImGui::EndChild();
             ImGui::PopStyleColor();
             ImGui::Separator();
         }
 
-        Entity& entity = app.GetSelectedEntity();
         if (entity.IsGlobalLight())
         {
             if (app.Is2DWorldMode())
@@ -2889,6 +3528,7 @@ void InspectorPanel::Draw(Application& app)
         if (ImGui::InputText(L("inspector.name"), nameBuffer, sizeof(nameBuffer)))
         {
             entity.SetName(nameBuffer);
+            ForEachInspectorBatchEntity([&](Entity& target) { target.SetName(nameBuffer); });
             app.MarkDirty();
         }
 
@@ -3175,20 +3815,17 @@ void InspectorPanel::Draw(Application& app)
         const float scaleLockWidth = std::max(1.0f, scaleActionAvailable - scaleResetWidth - scaleActionGap);
         // Botão de Proporção / Trava Uniforme [=] ou [≠]
         {
-            if (s_ScaleUniformLocked)
+            bool toggleScaleLock = false;
             {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f, 0.48f, 0.78f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.58f, 0.90f, 1.0f));
-            }
-            if (MaraeUI::IconButton(s_ScaleUniformLocked ? MaraeUI::EditorIcon::Lock : MaraeUI::EditorIcon::Unlock,
+                UniformScaleButtonStyle buttonStyle(s_ScaleUniformLocked);
+                toggleScaleLock = MaraeUI::IconButton(
+                    s_ScaleUniformLocked ? MaraeUI::EditorIcon::Lock : MaraeUI::EditorIcon::Unlock,
                     s_ScaleUniformLocked ? UI("Proporcional##SclLock") : UI("Escala livre##SclLock"),
-                    ImVec2(scaleLockWidth, 0.0f)))
+                    ImVec2(scaleLockWidth, 0.0f));
+            }
+            if (toggleScaleLock)
             {
                 s_ScaleUniformLocked = !s_ScaleUniformLocked;
-            }
-            if (s_ScaleUniformLocked)
-            {
-                ImGui::PopStyleColor(2);
             }
             if (ImGui::IsItemHovered())
             {
@@ -3439,6 +4076,21 @@ void InspectorPanel::Draw(Application& app)
                         entity.GetMaterialComponent().MaterialData.TextureName = std::filesystem::path(assetPath).stem().string();
                         entity.GetMaterialComponent().MaterialData.DiffuseTexture = TextureCache::Load(assetPath);
                         entity.GetColorComponent().Color = Vector3(1.0f, 1.0f, 1.0f);
+                        ForEachInspectorBatchComponent<MeshComponent>([&](MeshComponent& target)
+                        {
+                            target.MeshPath = meshComponent.MeshPath;
+                            target.MeshData = meshComponent.MeshData;
+                        });
+                        ForEachInspectorBatchComponent<MaterialComponent>([&](MaterialComponent& target)
+                        {
+                            target.MaterialData.TexturePath = entity.GetMaterialComponent().MaterialData.TexturePath;
+                            target.MaterialData.TextureName = entity.GetMaterialComponent().MaterialData.TextureName;
+                            target.MaterialData.DiffuseTexture = entity.GetMaterialComponent().MaterialData.DiffuseTexture;
+                        });
+                        ForEachInspectorBatchComponent<ColorComponent>([&](ColorComponent& target)
+                        {
+                            target.Color = entity.GetColorComponent().Color;
+                        });
                         app.MarkDirty();
                     }
                     else
@@ -3448,6 +4100,11 @@ void InspectorPanel::Draw(Application& app)
                         {
                             meshComponent.MeshData = mesh;
                             meshComponent.MeshPath = assetPath;
+                            ForEachInspectorBatchComponent<MeshComponent>([&](MeshComponent& target)
+                            {
+                                target.MeshData = mesh;
+                                target.MeshPath = assetPath;
+                            });
                             app.MarkDirty();
                         }
                     }
@@ -3497,6 +4154,10 @@ void InspectorPanel::Draw(Application& app)
             {
                 materialType = std::clamp(materialType, 0, 8);
                 material->Type = static_cast<MaterialType>(materialType);
+                ForEachInspectorBatchComponent<MaterialComponent>([&](MaterialComponent& target)
+                {
+                    target.MaterialData.Type = material->Type;
+                });
                 app.MarkDirty();
             }
 
@@ -3785,6 +4446,10 @@ void InspectorPanel::Draw(Application& app)
                 color.Color.X = meshColor[0];
                 color.Color.Y = meshColor[1];
                 color.Color.Z = meshColor[2];
+                ForEachInspectorBatchComponent<ColorComponent>([&](ColorComponent& target)
+                {
+                    target.Color = color.Color;
+                });
                 app.MarkDirty();
             }
         }
@@ -3965,11 +4630,19 @@ void InspectorPanel::Draw(Application& app)
                 if (ImGui::ColorEdit4(UI("Cor inicial##ParticleSystem"), startColor))
                 {
                     particles.StartColor = glm::vec4(startColor[0], startColor[1], startColor[2], startColor[3]);
+                    ForEachInspectorBatchComponent<ParticleSystemComponent>([&](ParticleSystemComponent& target)
+                    {
+                        target.StartColor = particles.StartColor;
+                    });
                     changed = true;
                 }
                 if (ImGui::ColorEdit4(UI("Cor final##ParticleSystem"), endColor))
                 {
                     particles.EndColor = glm::vec4(endColor[0], endColor[1], endColor[2], endColor[3]);
+                    ForEachInspectorBatchComponent<ParticleSystemComponent>([&](ParticleSystemComponent& target)
+                    {
+                        target.EndColor = particles.EndColor;
+                    });
                     changed = true;
                 }
                 float gravity[3] = { particles.Gravity.x, particles.Gravity.y, particles.Gravity.z };

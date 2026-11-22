@@ -33,13 +33,7 @@ namespace
         char byte = 0;
         while (file.get(byte))
         {
-            unsigned char value = static_cast<unsigned char>(byte);
-            if (value == '\r')
-            {
-                if (file.peek() == '\n') file.get(byte);
-                value = '\n';
-            }
-            hash ^= value;
+            hash ^= static_cast<unsigned char>(byte);
             hash *= 1099511628211ULL;
         }
 
@@ -67,8 +61,8 @@ namespace
         return fs::exists(path) && FileFingerprint(path) == expectedFingerprint;
     }
 
-    constexpr const char* kLegalVersion = "2.0";
-    constexpr const char* kOfficialFingerprint = "D59FDC7137BA1A97";
+    constexpr const char* kLegalVersion = "1.3";
+    constexpr const char* kOfficialFingerprint = "EA83059B7CE46CAC";
 
     fs::path FindLegalDocumentPath()
     {
@@ -87,11 +81,11 @@ namespace
             fs::path candidate = start;
             for (int level = 0; level < 8; ++level)
             {
-                const fs::path projectCopy = candidate / "MaraeEngine" / "OPEN_SOURCE_NOTICE.md";
+                const fs::path projectCopy = candidate / "MaraeEngine" / "TERMS_OF_USE_v1.3.md";
                 if (IsOfficialFile(projectCopy, kOfficialFingerprint))
                     return projectCopy;
 
-                const fs::path officialCopy = candidate / "OPEN_SOURCE_NOTICE.md";
+                const fs::path officialCopy = candidate / "TERMS_OF_USE_v1.3.md";
                 if (IsOfficialFile(officialCopy, kOfficialFingerprint))
                     return officialCopy;
 
@@ -101,7 +95,7 @@ namespace
             }
         }
 
-        return fs::current_path() / "OPEN_SOURCE_NOTICE.md";
+        return fs::current_path() / "TERMS_OF_USE_v1.3.md";
     }
     fs::path CopyTermsToExternalFile()
     {
@@ -109,7 +103,7 @@ namespace
         const fs::path directory = fs::path(ProjectManager::GetUserDocumentsPath()) / "MaraeEngine";
         std::error_code error;
         fs::create_directories(directory, error);
-        const fs::path target = directory / "OPEN_SOURCE_NOTICE_COPY.md";
+        const fs::path target = directory / "TERMS_OF_USE_v1.3_COPY.md";
         std::ifstream input(source, std::ios::binary);
         std::ofstream output(target, std::ios::binary | std::ios::trunc);
         if (!input.is_open() || !output.is_open()) return {};
@@ -133,8 +127,8 @@ namespace
         bool privacy = false;
         while (std::getline(file, line))
         {
-            if (line == "LicenseNoticeVersion=" + std::string(kLegalVersion)) terms = true;
-            if (line == "PrivacyNoticeVersion=" + std::string(kLegalVersion)) privacy = true;
+            if (line == "TermsVersion=" + std::string(kLegalVersion)) terms = true;
+            if (line == "PrivacyVersion=" + std::string(kLegalVersion)) privacy = true;
         }
         return terms && privacy;
     }
@@ -143,8 +137,8 @@ namespace
     {
         std::ofstream file(AcceptancePath(), std::ios::trunc);
         if (!file.is_open()) return;
-        file << "LicenseNoticeVersion=" << kLegalVersion << "\n";
-        file << "PrivacyNoticeVersion=" << kLegalVersion << "\n";
+        file << "TermsVersion=" << kLegalVersion << "\n";
+        file << "PrivacyVersion=" << kLegalVersion << "\n";
         file << "AcceptedAt=" << std::time(nullptr) << "\n";
         file << "AcceptanceMethod=ExplicitCheckbox\n";
     }
@@ -253,7 +247,7 @@ namespace
         if (!integrityValid)
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.35f, 0.25f, 1.0f));
-            ImGui::TextWrapped(UI("Documento oficial não verificado. Restaure a cópia oficial dos avisos de licença para habilitar o aceite."));
+            ImGui::TextWrapped(UI("Documento legal não verificado. O aceite ficará bloqueado até que a versão oficial v1.3 seja restaurada."));
             ImGui::PopStyleColor();
             ImGui::Separator();
         }
@@ -295,8 +289,8 @@ bool LegalNotice::DrawFirstRunAcceptance()
 
     static bool confirmed = false;
     const bool isPT = Localization::Get().GetResolvedLanguage() == EditorLanguage::Portuguese;
-    const char* title = isPT ? "Licença — Marae Engine"
-                             : "License — Marae Engine";
+    const char* title = isPT ? "Aceite obrigatório — Marae Engine"
+                             : "Required acceptance — Marae Engine";
 
     ImGui::OpenPopup(title);
     ImGui::SetNextWindowSize(ImVec2(920.0f, 680.0f), ImGuiCond_FirstUseEver);
@@ -308,8 +302,8 @@ bool LegalNotice::DrawFirstRunAcceptance()
             : "Read carefully before continuing");
         ImGui::Separator();
         ImGui::TextWrapped(UI("%s"), isPT
-            ? "Leia o aviso de licença e privacidade, role até o fim e confirme que compreendeu."
-            : "Read the license and privacy notice, scroll to the end, and confirm that you understand it.");
+            ? "A instalação ou abertura da Marae Engine não substitui o aceite explícito. Para usar a engine, você precisa confirmar que leu e concorda com os Termos de Uso e a Política de Privacidade abaixo."
+            : "To use Marae Engine, read the consolidated document, scroll to the end, and explicitly confirm your agreement.");
         ImGui::Spacing();
 
         const bool reachedEnd = RenderConsolidatedDocument(-122.0f);
@@ -318,8 +312,8 @@ bool LegalNotice::DrawFirstRunAcceptance()
         if (!reachedEnd)
             ImGui::BeginDisabled();
         ImGui::Checkbox(isPT
-            ? "Li e compreendi o aviso de licença e privacidade da Marae Engine."
-            : "I have read and understood Marae Engine's license and privacy notice.", &confirmed);
+            ? "Li e concordo com os Termos de Uso e a Politica de Privacidade da Marae Engine."
+            : "I have read and agree to Marae Engine's Terms of Use and Privacy Policy.", &confirmed);
         if (!reachedEnd)
             ImGui::EndDisabled();
         if (!reachedEnd)
@@ -358,7 +352,7 @@ void LegalNotice::DrawModal(bool* p_open)
     ImGui::SetNextWindowSize(ImVec2(880.0f, 600.0f), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-    if (ImGui::Begin(isPT ? "Marae Engine — Licença e Avisos & Contato" : "Marae Engine — License and Notices & Contact", p_open,
+    if (ImGui::Begin(isPT ? "Marae Engine — Termos de Uso, Licença & Contato" : "Marae Engine — Terms of Service, License & Contact", p_open,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings))
     {
         // Os documentos são exibidos pela própria engine e não podem ser
@@ -385,7 +379,7 @@ void LegalNotice::DrawModal(bool* p_open)
         ImGui::Separator();
         ImGui::Spacing();
 
-        // Exibe o aviso oficial de licença e privacidade em um único lugar.
+        // Exibe o documento consolidado v1.3 em um único lugar.
         RenderConsolidatedDocument();
 
         ImGui::Separator();
@@ -423,7 +417,7 @@ void LegalNotice::DrawPanel()
     ImGui::SetCursorPos(ImVec2(20.0f, 20.0f));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.92f, 0.92f, 0.92f, 1.0f));
     ImGui::SetWindowFontScale(1.2f);
-    ImGui::TextUnformatted(isPT ? "Licença e Avisos & Contato" : "License and Notices & Contact");
+    ImGui::TextUnformatted(isPT ? "Termos de Uso, Licença & Contato" : "Terms of Service, License & Contact");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
 
@@ -454,5 +448,3 @@ void LegalNotice::DrawPanel()
     // Documento consolidado com uma única área de rolagem.
     RenderConsolidatedDocument();
 }
-
-

@@ -720,6 +720,9 @@ int Application::RunUIRegressionTests()
     std::filesystem::remove(uiTestScene, uiTestCleanupError);
     m_ProjectConfig.ScenePath = previousUIScenePath;
 
+    check(InspectorPanel::RunBatchEditRegressionTests() == 0,
+          "Inspector aplica edições em lote aos componentes compatíveis da seleção");
+
     std::cout << "[UITest] " << (failures == 0 ? "SUITE PASSOU" : "SUITE FALHOU")
               << " (" << failures << " falha(s))" << std::endl;
     return failures == 0 ? 0 : 1;
@@ -3454,6 +3457,8 @@ void Application::OnUpdate()
         m_UpPressed = false;
         m_DownPressed = false;
         m_DPressed = false;
+        m_CPressed = false;
+        m_VPressed = false;
         m_FPressed = false;
         m_DeletePressed = false;
         m_UndoPressed = false;
@@ -3613,6 +3618,26 @@ void Application::OnUpdate()
                     GizmoSpace::World;
             }
         }
+
+        if (ctrlPressed && m_Window.IsKeyPressed(GLFW_KEY_C))
+        {
+            if (!m_CPressed)
+            {
+                m_CPressed = true;
+                CopySelectedEntities();
+            }
+        }
+        else m_CPressed = false;
+
+        if (ctrlPressed && m_Window.IsKeyPressed(GLFW_KEY_V))
+        {
+            if (!m_VPressed)
+            {
+                m_VPressed = true;
+                PasteCopiedEntities();
+            }
+        }
+        else m_VPressed = false;
 
         if (!InspectorPanel::IsModelingMode() && m_Window.IsKeyPressed(GLFW_KEY_DELETE))
         {
@@ -3868,7 +3893,7 @@ void Application::OnUpdate()
                             it != entities.end()
                             )
                         {
-                            entities.erase(it);
+                            m_Scene.DeleteEntity(static_cast<int>(it - entities.begin()));
                         }
                     }
                     else
@@ -4426,6 +4451,9 @@ void Application::OnUpdate()
         // Unity: Edit — undo/redo, duplicate/delete, preferences
         if (ImGui::BeginMenu(L("menu.edit")))
         {
+            if (ImGui::MenuItem(L("menu.edit.copy"), "Ctrl+C")) CopySelectedEntities();
+            if (ImGui::MenuItem(L("menu.edit.paste"), "Ctrl+V", false, !m_EntityClipboard.empty())) PasteCopiedEntities();
+            ImGui::Separator();
             if (ImGui::MenuItem(L("menu.edit.duplicate"), "Ctrl+D")) DuplicateSelectedEntity();
             if (ImGui::MenuItem(L("menu.edit.delete"),    "Del"))     DeleteSelectedEntity();
 
@@ -5968,7 +5996,6 @@ void Application::DeleteSelectedEntity()
 }
 
 void Application::DuplicateSelectedEntity()
-
 {
     const auto& entities =
         m_Scene.GetEntities();
@@ -5993,13 +6020,9 @@ void Application::DuplicateSelectedEntity()
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
     if (indices.empty()) return;
 
-    std::vector<int> duplicated;
-    for (int index : indices)
-    {
-        const int duplicatedIndex = SceneCommands::DuplicateEntity(m_Scene, index);
-        if (duplicatedIndex >= 0)
-            duplicated.push_back(duplicatedIndex);
-    }
+    auto snapshot = SceneCommands::CaptureSelection(m_Scene, indices);
+    std::vector<uint64_t> createdIDs;
+    const std::vector<int> duplicated = SceneCommands::PasteSelection(m_Scene, snapshot, &createdIDs, true);
     if (duplicated.empty()) return;
 
     m_SelectedEntity = duplicated.back();
@@ -6007,24 +6030,44 @@ void Application::DuplicateSelectedEntity()
     m_SelectedID = m_Scene.GetEntities()[static_cast<size_t>(m_SelectedEntity)].GetID();
 
     // Push create command for undo
-    for (int duplicatedIndex : duplicated)
+    for (uint64_t createdID : createdIDs)
     {
         TransformCommand command;
         command.Type = CommandType::Create;
-        command.EntityID = m_Scene.GetEntities()[static_cast<size_t>(duplicatedIndex)].GetID();
-        command.EntityIndex = duplicatedIndex;
-        command.EntityData = [&]() {
-            std::ostringstream ss;
-            auto& e = m_Scene.GetEntities()[static_cast<size_t>(duplicatedIndex)];
-            ss << e.GetName() << "\n";
-            Transform& t = e.GetTransform();
-            ss << t.Position.X << " " << t.Position.Y << " " << t.Position.Z << "\n";
-            ss << t.Rotation.x << " " << t.Rotation.y << " " << t.Rotation.z << " " << t.Rotation.w << "\n";
-            ss << t.Scale.X << " " << t.Scale.Y << " " << t.Scale.Z << "\n";
-            auto& col = e.GetColorComponent().Color;
-            ss << col.X << " " << col.Y << " " << col.Z << "\n";
-            return ss.str();
-        }();
+        command.EntityID = createdID;
+        m_UndoRedoManager.Push(command);
+    }
+    MarkDirty();
+}
+
+void Application::CopySelectedEntities()
+{
+    const auto& entities = m_Scene.GetEntities();
+    std::vector<int> indices = m_MultiSelectedEntities;
+    if (indices.empty() && m_SelectedEntity >= 0 && m_SelectedEntity < static_cast<int>(entities.size()))
+        indices.push_back(m_SelectedEntity);
+    auto snapshot = SceneCommands::CaptureSelection(m_Scene, indices);
+    if (snapshot.Entities.empty()) return;
+    m_EntityClipboard = std::move(snapshot.Entities);
+    m_EntityClipboardRoots = std::move(snapshot.RootIDs);
+}
+
+void Application::PasteCopiedEntities()
+{
+    if (m_EntityClipboard.empty() || m_EntityClipboardRoots.empty()) return;
+    SceneCommands::EntitySelectionSnapshot snapshot{ m_EntityClipboard, m_EntityClipboardRoots };
+    std::vector<uint64_t> createdIDs;
+    const std::vector<int> roots = SceneCommands::PasteSelection(m_Scene, snapshot, &createdIDs, true);
+    if (roots.empty()) return;
+
+    m_MultiSelectedEntities = roots;
+    m_SelectedEntity = roots.back();
+    m_SelectedID = m_Scene.GetEntities()[static_cast<size_t>(m_SelectedEntity)].GetID();
+    for (uint64_t id : createdIDs)
+    {
+        TransformCommand command;
+        command.Type = CommandType::Create;
+        command.EntityID = id;
         m_UndoRedoManager.Push(command);
     }
     MarkDirty();

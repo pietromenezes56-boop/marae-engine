@@ -145,6 +145,8 @@ public:
     void RenderInternalEditorUI();
     void DeleteSelectedEntity();
     void DuplicateSelectedEntity();
+    void CopySelectedEntities();
+    void PasteCopiedEntities();
     Scene& GetScene();
     int GetSelectedEntity() const;
     Entity& GetSelectedEntity();
@@ -336,10 +338,14 @@ private:
     bool m_UpPressed = false;
     bool m_DownPressed = false;
     bool m_DPressed = false;
+    bool m_CPressed = false;
+    bool m_VPressed = false;
     bool m_FPressed = false;
     bool m_UndoPressed = false;
     bool m_RedoPressed = false;
     bool m_DeletePressed = false;
+    std::vector<Entity> m_EntityClipboard;
+    std::vector<uint64_t> m_EntityClipboardRoots;
 
     void OnUpdate();
 

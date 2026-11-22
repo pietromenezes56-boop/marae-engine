@@ -18,6 +18,8 @@
   "menu.file.no_levels": "No levels found",
   "menu.file.import_model": "Import Model...",
   "menu.edit.duplicate": "Duplicate",
+  "menu.edit.copy": "Copy",
+  "menu.edit.paste": "Paste",
   "menu.edit.delete": "Delete",
   "menu.create.cube": "Cube",
   "menu.create.sphere": "Sphere",

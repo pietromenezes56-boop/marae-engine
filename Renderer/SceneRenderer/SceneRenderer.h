@@ -120,6 +120,7 @@ private:
     // oclusor→receptor em penumbra física.
     std::array<float, Shader::MAX_SHADOW_CASCADES> m_CachedCascadeDepthRanges{};
     bool m_UseShadows = true;
+    GraphicsQuality m_Quality = GraphicsQuality::Balanced;
     GridRenderer m_GridRenderer;
     InstancedRenderer m_InstancedRenderer;
     bool m_InstancedRenderingEnabled = true;

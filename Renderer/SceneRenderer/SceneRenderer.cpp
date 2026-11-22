@@ -544,6 +544,7 @@ void SceneRenderer::RenderReflection(
 
 void SceneRenderer::SetQuality(GraphicsQuality quality)
 {
+    m_Quality = quality;
     m_DirectionalShadowCacheValid = false;
     m_LocalShadowCacheValid = false;
     switch (quality)
@@ -923,6 +924,21 @@ void SceneRenderer::Render(
         return opacity;
     };
     LightingSettings lightingSettings = lighting.Settings;
+    if (m_Quality == GraphicsQuality::UltraPerformance)
+    {
+        // A cena mantém os valores autorais, mas o renderer aplica limites
+        // temporários para que seus dados salvos não elevem o custo do perfil.
+        lightingSettings.DynamicShadows = false;
+        lightingSettings.ContactShadows = false;
+        lightingSettings.IndirectLighting = false;
+        lightingSettings.EnvironmentLighting = false;
+        lightingSettings.MaxPointLights = std::min(lightingSettings.MaxPointLights, 4);
+        lightingSettings.MaxSpotLights = std::min(lightingSettings.MaxSpotLights, 4);
+        lightingSettings.MaxShadowedLocalLights = 0;
+        lightingSettings.ShadowDistance = std::min(lightingSettings.ShadowDistance, 80.0f);
+        lightingSettings.ShadowMapResolution = std::min(lightingSettings.ShadowMapResolution, 512);
+        lightingSettings.PointShadowMapResolution = std::min(lightingSettings.PointShadowMapResolution, 256);
+    }
     lightingSettings.Clamp();
     const bool advancedLightingEnabled = !editor2DMode && LightingSystem::IsEnabled(lightingSettings);
     const bool useShadows = !editor2DMode && ShadowSystem::ShouldRender(lightingSettings, m_UseShadows);

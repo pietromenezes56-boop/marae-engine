@@ -293,7 +293,7 @@
     <ClInclude Include="Hub\ProjectManager.h" />
     <ClInclude Include="Core\Diagnostics\GpuMemoryTracker.h" />
     <ClInclude Include="Core\Diagnostics\PerformanceMonitor.h" />
-    <ClInclude Include="Editor\Panels\AssetBrowser\AssetBrowserPanel.h" />
+    <ClInclude Include="Editor\AssetsPanel\AssetBrowserPanel.h" />
     <ClInclude Include="Editor\EditorLayer.h" />
     <ClInclude Include="Editor\EditorObjects\EditorObjects.h" />
     <ClInclude Include="Editor\Exporter\GameExporter.h" />
@@ -429,7 +429,7 @@
     <ClInclude Include="Editor\CodeEditor\CodeEditor.h" />
     <ClInclude Include="Editor\CodeEditor\ScriptGuide.h" />
     <ClInclude Include="ThirdParty\ImGuiColorTextEdit\TextEditor.h" />
-    <ClInclude Include="ThirdParty\ImGuizmo\ImGuizmo\src\ImGuizmo.h" />
+    <ClInclude Include="ThirdParty\ImGuizmo-master\ImGuizmo-master\src\ImGuizmo.h" />
     <ClInclude Include="ThirdParty\stb\stb_image.h" />
     <ClInclude Include="Window\Window.h" />
   </ItemGroup>
@@ -450,4 +450,3 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>
-

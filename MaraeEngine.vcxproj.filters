@@ -383,7 +383,7 @@
     <ClInclude Include="Renderer\Framebuffer\Framebuffer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="ThirdParty\ImGuizmo\ImGuizmo\src\ImGuizmo.h">
+    <ClInclude Include="ThirdParty\ImGuizmo-master\ImGuizmo-master\src\ImGuizmo.h">
       <Filter>ThirdParty</Filter>
     </ClInclude>
     <ClInclude Include="Editor\Picking\Picking.h">
@@ -404,7 +404,7 @@
     <ClInclude Include="Scene\Prefab\Prefab.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Panels\AssetBrowser\AssetBrowserPanel.h">
+    <ClInclude Include="Editor\AssetsPanel\AssetBrowserPanel.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Renderer\Material\Material.h">
@@ -583,4 +583,3 @@
     </ClInclude>
   </ItemGroup>
 </Project>
-

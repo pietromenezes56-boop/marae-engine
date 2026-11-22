@@ -219,6 +219,8 @@ public:
         bool value
     );
 
+    void CopyDataFrom(const Entity& source);
+
     uint64_t GetParentID() const;
 
     void SetParentID(

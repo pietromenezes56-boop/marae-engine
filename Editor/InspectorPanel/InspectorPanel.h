@@ -13,6 +13,7 @@ class InspectorPanel
 public:
 
     static void Draw(Application& app);
+    static int RunBatchEditRegressionTests();
 
     static void DrawMaterialInspector(
         const AssetInfo& asset

@@ -422,7 +422,14 @@ void Renderer::Render(
     m_LastWidth = viewportWidth;
     m_LastHeight = viewportHeight;
 
-    if (m_PostPipeline.GetWidth() != viewportWidth || m_PostPipeline.GetHeight() != viewportHeight)
+    // Ultra Performance deve evitar o framebuffer HDR e o passe de composição
+    // por completo. Redimensioná-lo mesmo sem usá-lo alocava memória e trabalho
+    // de GPU desnecessários em cada mudança de tamanho do viewport.
+    const bool useSceneEffectsComposite =
+        !editor2DMode && m_Quality != GraphicsQuality::UltraPerformance &&
+        m_PostPipeline.IsValid();
+    if (useSceneEffectsComposite &&
+        (m_PostPipeline.GetWidth() != viewportWidth || m_PostPipeline.GetHeight() != viewportHeight))
         m_PostPipeline.Resize(viewportWidth, viewportHeight);
 
     GLint prevFBO = 0;
@@ -444,6 +451,21 @@ void Renderer::Render(
             globalLight = entity.GetGlobalLightComponent();
             break;
         }
+    }
+
+    // O perfil é um limite de custo em tempo de execução: opções pesadas que
+    // estejam salvas na cena continuam intactas no Inspector/arquivo, mas não
+    // podem reativar efeitos caros enquanto Ultra Performance estiver ativo.
+    if (m_Quality == GraphicsQuality::UltraPerformance)
+    {
+        globalLight.Lighting.ScreenSpaceAOEnabled = false;
+        globalLight.Lighting.ScreenSpaceReflectionsEnabled = false;
+        globalLight.Lighting.TemporalAAEnabled = false;
+        globalLight.Lighting.VolumetricCloudsEnabled = false;
+        globalLight.Lighting.GodRaysEnabled = false;
+        globalLight.Lighting.GlareRaysEnabled = false;
+        globalLight.BloomStrength = 0.0f;
+        globalLight.VignetteStrength = 0.0f;
     }
 
     glm::mat4 view = m_CameraRenderer.GetViewMatrix(camera);
@@ -503,7 +525,6 @@ void Renderer::Render(
     // Compose the complete scene through HDR so Global Light screen filters
     // affect geometry and sky uniformly. If post processing is unavailable,
     // rendering falls back to the direct target below.
-    const bool useSceneEffectsComposite = !editor2DMode && m_PostPipeline.IsValid();
     if (!globalLight.Lighting.TemporalAAEnabled || editor2DMode || !m_PostPipeline.IsValid())
         m_PostPipeline.ReleaseTemporalHistory();
 

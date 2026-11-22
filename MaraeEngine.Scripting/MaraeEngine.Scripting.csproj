@@ -11,7 +11,7 @@
     <AssemblyName>MaraeEngine.Scripting</AssemblyName>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <OutputPath>..\ScriptRuntime\</OutputPath>
+    <OutputPath>..\..\ScriptRuntime\</OutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>portable</DebugType>
@@ -30,4 +30,3 @@
   </ItemGroup>
 
 </Project>
-
