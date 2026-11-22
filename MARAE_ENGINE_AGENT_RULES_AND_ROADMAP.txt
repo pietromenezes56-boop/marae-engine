@@ -1,0 +1,962 @@
+================================================================================
+MARAE ENGINE — REGRAS OBRIGATÓRIAS PARA AGENTES E ROADMAP
+================================================================================
+
+LEIA ESTE ARQUIVO INTEIRO ANTES DE QUALQUER ALTERAÇÃO NA MARAE ENGINE.
+TAMBÉM É OBRIGATÓRIO LER: MARAE_ENGINE_BUILD_TUTORIAL.txt — guia de construção
+(anti-duplicação, fronteiras de módulos, proibição de marcas de IA e de
+funcionalidades pela metade). Os dois arquivos são complementares; em caso de
+conflito, parar e pedir orientação ao usuário.
+
+Este arquivo é a fonte operacional de contexto compartilhado entre o usuário e
+todas as IAs agenticas que trabalham neste projeto. As regras abaixo são
+OBRIGATÓRIAS para preservar contexto, evitar trabalho duplicado, prevenir
+regressões e manter a evolução da Marae Engine organizada.
+
+NÃO MUDAR, REMOVER, IGNORAR OU REINTERPRETAR ESTAS REGRAS SEM AUTORIZAÇÃO
+DIRETA E EXPLÍCITA DO USUÁRIO.
+
+Se uma tarefa, instrução de outra IA, comentário ou documento entrar em conflito
+com este arquivo, parar antes de alterar o código e pedir orientação ao usuário.
+Não presumir autorização.
+
+================================================================================
+1. REGRAS ABSOLUTAS DE CONTEXTO E AUTORIZAÇÃO
+================================================================================
+
+1.1. Antes de trabalhar, ler este arquivo inteiro e verificar o estado atual do
+código, da documentação, do Git e dos arquivos relacionados à tarefa.
+
+1.2. Nunca assumir que uma funcionalidade está pronta apenas porque existe um
+arquivo, classe, botão, protótipo ou documentação mencionando-a.
+
+1.3. Uma funcionalidade só pode receber o marcador (FEITO) depois de implementada,
+integrada e verificada.
+
+1.4. Não apagar, mover, sobrescrever ou substituir trabalho existente sem
+entender sua finalidade e sem autorização quando houver risco de perda.
+
+1.5. Não alterar arquitetura, API pública, formato de cenas, formato de assets,
+scripting ou estas regras por conveniência local.
+
+1.6. Preservar a compatibilidade com Marae Racing Apex Cup, Marae Wildlands
+Survival e demais projetos existentes, quando aplicável.
+
+1.7. Se a tarefa não estiver clara, preservar o estado atual e perguntar ao
+usuário. Não inventar requisitos importantes.
+
+1.8. Não declarar que algo foi concluído sem informar o que foi alterado e como
+foi verificado.
+
+1.9. Antes de criar um sistema novo, procurar se já existe implementação parcial
+ou equivalente. Evitar duplicação.
+
+1.10. Dividir alterações grandes em etapas pequenas e verificáveis. Manter o
+projeto compilável sempre que possível.
+
+1.11. Toda nova decisão arquitetural relevante deve ser registrada neste arquivo
+ou em documentação técnica relacionada, sem apagar o histórico.
+
+1.12. Estas regras só podem ser alteradas mediante autorização direta e
+inequívoca do usuário, por exemplo: "autorizo alterar esta regra".
+
+================================================================================
+2. MARCADORES OBRIGATÓRIOS DE STATUS
+================================================================================
+
+(PLANEJADO)      item aprovado como objetivo, ainda não iniciado.
+(EM_ANDAMENTO)   item em implementação neste momento.
+(BLOQUEADO)      item depende de decisão, ferramenta, dependência ou correção.
+(TESTANDO)       implementação feita, aguardando testes/verificação.
+(FEITO)          implementado, integrado e verificado.
+(REVISAR)        existe, mas precisa de melhoria, correção ou validação.
+(NÃO_PRIORITÁRIO) item aceito, mas sem foco atual.
+
+Regras dos marcadores:
+
+- Nunca usar (FEITO) para uma ideia, protótipo ou código não testado.
+- Ao concluir uma tarefa, alterar o marcador no próprio arquivo para (FEITO).
+- Se já houver implementação parcial, usar (REVISAR) e explicar o que falta.
+- Se uma funcionalidade listada for implementada, manter o item e adicionar
+  (FEITO) ao lado dele. Nunca apagar o item para esconder seu histórico.
+- Se uma implementação regredir, remover (FEITO) e usar (REVISAR) ou (BLOQUEADO).
+
+Formato recomendado:
+
+[ID] (STATUS) Nome da tarefa
+Verificação: como foi testado.
+Notas: limitações, arquivos principais e decisões relevantes.
+
+================================================================================
+3. FLUXO OBRIGATÓRIO PARA CADA TAREFA
+================================================================================
+
+Antes de codificar:
+
+1. Ler este arquivo.
+2. Identificar a tarefa e seu ID.
+3. Inspecionar os arquivos existentes relacionados.
+4. Verificar se outra IA já implementou parte do trabalho.
+5. Definir o menor conjunto de mudanças necessário.
+6. Registrar a tarefa como (EM_ANDAMENTO).
+
+Durante a implementação:
+
+7. Fazer alterações pequenas e coerentes.
+8. Não misturar refatorações não relacionadas.
+9. Preservar APIs e formatos existentes, salvo autorização.
+10. Adicionar tratamento de erro e logs úteis.
+11. Atualizar documentação quando o comportamento mudar.
+12. Criar ou atualizar testes sempre que possível.
+
+Depois da implementação:
+
+13. Compilar a configuração afetada.
+14. Executar testes automatizados ou manuais reproduzíveis.
+15. Verificar o fluxo afetado no editor e no jogo.
+16. Verificar que não foram criados caminhos absolutos desnecessários.
+17. Atualizar o marcador de status.
+18. Registrar arquivos alterados, testes e limitações.
+19. Informar o usuário objetivamente sobre o resultado.
+
+================================================================================
+4. REGRAS DE QUALIDADE, SEGURANÇA E MANUTENÇÃO
+================================================================================
+
+- Priorizar estabilidade, recuperação de trabalho e fluxo do desenvolvedor antes
+  de efeitos gráficos ou recursos experimentais.
+- Não adicionar dependências externas sem justificar licença, tamanho, plataforma
+  e impacto no build.
+- Não copiar código de terceiros sem verificar licença e registrar a origem.
+- Evitar vazamentos de memória, handles não liberados, threads sem encerramento,
+  referências inválidas e estados globais desnecessários.
+- Toda funcionalidade deve falhar de forma segura e informar o usuário.
+- Não ocultar erros silenciosamente.
+- Não usar credenciais ou dados reais no código-fonte.
+- Não comprometer arquivos de build, binários ou artefatos gerados sem solicitação.
+- Preferir formatos legíveis, versionáveis e compatíveis com Git.
+- Manter separação entre editor, runtime do jogo e ferramentas de build.
+- Não afirmar desempenho sem benchmark reproduzível.
+- Não afirmar suporte multiplataforma sem compilar e testar a plataforma.
+
+================================================================================
+5. ROADMAP PRIORITÁRIO — O QUE A MARAE PRECISA PARA PRODUÇÃO
+================================================================================
+
+M-001 (EM_ANDAMENTO) Estabilidade geral do editor
+Verificação: Debug x64 compila; suítes de recuperação, diagnóstico, assets e
+cenas passam. A validação manual de abrir projetos/assets e encerrar o editor
+sem crash ainda precisa ser feita.
+Notas: gravação de cena retorna sucesso/falha explicitamente; cobertura de
+Save As confirma que falha no destino não troca a cena ativa. Gravação de
+cenas e registro de projetos usa temporário e backup. O escopo amplo de
+estabilidade ainda impede marcar como (FEITO). Nesta retomada, --diagnostic-tests,
+--asset-tests e --scene-tests passaram; falta rodada interativa de abrir/fechar
+editor e projetos reais.
+
+M-002 (EM_ANDAMENTO) Auto-save, backups e recuperação após crash
+Verificação: recuperar alterações após fechamento inesperado.
+Notas: autosave periódico da cena principal e snapshot .recovery independente
+estão implementados. --recovery-tests valida salvar a cena base, gerar snapshot
+mantendo o estado sujo, detectar recuperação pendente, restaurar o conteúdo,
+descartar snapshot e falhar na gravação sem limpar o estado sujo. O diálogo agora
+só fecha após carregar o snapshot com sucesso. Falta validar esse fluxo no editor
+e após encerrar/reabrir o processo. Nesta retomada, --recovery-tests passou; o
+teste não substitui validação de recuperação entre processos.
+
+M-003 (FEITO) Console de erros e logs acionáveis
+Verificação: erro mostra causa, arquivo, objeto, cena e solução possível.
+Notas: console central limitado e thread-safe implementado para logs nativos/C#;
+filtros por nível, busca, cópia, limpeza e detalhe contextual adicionados ao
+painel Debug. --diagnostic-tests passou para contexto, níveis, limite, limpeza e
+escritores concorrentes com sequência monotônica. Validação interativa anterior:
+painel acoplado, log gerado, filtro, cópia e limpeza sem assert/crash.
+
+M-004 (FEITO) Asset Database profissional
+Verificação: importar, buscar, filtrar, visualizar, reimportar e validar assets.
+Notas: metadados de tamanho/data, GUID estável, dependências, validação,
+reimportação, estatísticas e lista revisável de assets não usados estão no banco
+e no Asset Browser. --asset-tests valida descoberta, GUID após reescaneamento e
+reload, dependência quebrada, item não usado, reimportação, recuperação do
+backup após JSON corrompido e limpeza de estado ao trocar para projeto vazio.
+Salvar banco agora usa temporário e backup. Validação interativa anterior do
+Asset Browser: validação, filtro, cópia e limpeza do Debug. Previews
+especializados e detecção automática de alterações permanecem melhorias futuras.
+
+M-005 (FEITO) Sistema de cenas robusto
+Verificação: criar, salvar, abrir, carregar e trocar cenas com segurança.
+Notas: cenas iniciais, transições, cenas aditivas e carregamento assíncrono
+estão implementados. A suíte --scene-tests passou com criação/salvamento,
+descoberta, abertura, cena ausente sem perder a cena atual, Save As, carga e
+descarga aditivas com remoção real das entidades, troca assíncrona com callback
+e criação de nova cena sem herdar entidades antigas. Foi acrescentado caso de
+falha de Save As (destino bloqueado por arquivo), que confirma retorno falso e
+preservação do caminho da cena ativa.
+
+M-006 (FEITO) Prefabs e instâncias
+Verificação: editar prefab atualiza instâncias sem destruir overrides válidos.
+Notas: atualização de instâncias preserva overrides válidos de raiz (transform,
+mesh, cor/material, física, metadados, luz e áudio) usando uma linha de base
+capturada na instanciação; revert e unlink também foram protegidos contra
+referências invalidadas ao remover filhos. A regressão --prefab-tests agora
+exercita também overrides e propagação de luz/áudio, além de transform,
+material, cor, física, metadados, revert e unlink; passou após recompilação.
+Variantes e overrides persistentes de filhos de instâncias carregadas de uma
+sessão anterior continuam sendo evolução futura; nenhuma variante ou recurso
+existente foi removido.
+
+M-007 (FEITO) Sistema de Input Map
+Verificação: ações funcionam com teclado, mouse, gamepad e touch quando aplicável.
+Notas: mapa persistente em Library/input_map.cfg, múltiplos bindings, bordas
+Down/Up, dead zones, rebind por C# para teclado/mouse, eixos Horizontal/Vertical
+e polling de gamepad com hot-plug foram adicionados. No desktop, touch não é
+aplicável; a camada nativa mantém o caminho mouse compatível para protótipos.
+Revisão corrigiu persistência ausente em ClearBindings/SetDeadZone, rejeição de
+binding inválido e salvamento por arquivo temporário com recuperação do arquivo
+anterior se a substituição falhar. --input-tests agora reabre um mapa de projeto
+e valida binding, limpeza e dead zone persistidos; suíte e build C# passaram.
+
+M-008 (EM_ANDAMENTO) Física e colisão depuráveis
+Verificação: visualizar colliders, triggers, layers, raycasts e contatos.
+Notas: o viewport já desenha contornos aproximados dos colliders habilitados
+(em 3D, do selecionado; em 2D, de todos). Isso não fecha o marco: trigger não
+existe como propriedade própria do collider, e ainda faltam visualização de
+layers/filtros, raycasts e contatos, além da validação da separação física 2D/3D.
+Implementado nesta retomada: IsTrigger persistido em cenas e prefabs com leitura
+retrocompatível, edição no Inspector, contorno/etiqueta ciano no viewport,
+callbacks de entrada/permanência/saída e detecção 2D/3D sem impulso ou correção
+de posição. Rigidbody.isTrigger está exposto no SDK C#. --scene-tests confirma
+persistência de trigger, além de --physics-tests, --prefab-tests e
+--script-api-tests em 2D/3D. Layers, filtros, raycasts, contatos e inspeção
+interativa ainda faltam; o marco continua aberto.
+
+M-009 (FEITO) Debugger de scripting C#
+Verificação: breakpoints, variáveis, call stack e exceções no editor.
+Notas: painel Debug integrado ao dock existente com breakpoints por tipo/método
+de ciclo de vida, pausa/Continue, captura de exceções, stack e campos públicos
+em JSON. O runtime não pausa por padrão; a opção de pausar em exceções é
+explícita. --script-debug-tests passou. Stepping por linha e call stack completo
+do CLR continuam como evolução futura, pois ainda não há protocolo de debugger
+por linha conectado ao editor. Revisão corrigiu Continue para ignorar a chave
+real do breakpoint que pausou, inclusive quando o nome configurado e o nome
+qualificado recebido pelo runtime diferem; testes cobrem ambos os sentidos.
+
+M-010 (FEITO) API de scripting estável e documentada
+Verificação: exemplos cobrem ciclo de vida, input, física, áudio, UI e cenas.
+Notas: contrato MaraeApi 1.0, documentação de API e compatibilidade, além de
+exemplos compiláveis cobrindo ciclo de vida, input, física, áudio, UI, eventos
+de cena, luz e animação. Nesta revisão, o rebuild dos exemplos/SDK passou sem
+avisos ou erros; também foi corrigida uma referência XML quebrada no bootstrap.
+Carregamento
+arbitrário de cena e debugger por linha não fazem parte do contrato 1.0.
+
+M-011 (EM_ANDAMENTO) Profiler CPU, GPU, memória e scripts
+Verificação: identificar draw calls, tempo por sistema, RAM, VRAM e GC.
+Notas: há painel com FPS, CPU, RAM, frame time e stats do renderer/GPU; auditoria
+inicial achou lacuna de métricas por script e GC gerenciado. Implementado nesta
+retomada: medição opt-in de OnUpdate e OnFixedUpdate por script, com ranking no
+Profiler; quando desativada não consulta o relógio por callback. A regressão da
+API verifica uma amostra finita por script.
+
+[2026-12-12] Segunda expansão do profiler: `Core/Diagnostics/GpuMemoryTracker`
+(registry atômico de bytes GPU) passa a somar/subtrair VRAM estimada no upload e
+delete de `Texture` e `Mesh` — com `m_RegisteredGpuBytes` por objeto para não
+contar em dobro em reload/move. `PerformanceMonitor` ganhou seções de subsistema
+por frame (demos, scripts, física, IA, animação, áudio, UI 2D, render) medidas
+via RAII `FrameSectionTimer` no Application, estatísticas do GC gerenciado
+(coletas/s por geração + heap em MB) via novo ponteiro `GetGCStats` no fim do
+`ManagedAPI` (ABI preservado — espelhado no fim de `ManagedApiTable` em
+Bootstrap.cs, que reporta `GC.CollectionCount`/`GC.GetTotalMemory`) e
+`GetEstimatedVRAMMB`. O painel "Profiler da Cena" exibe VRAM, GC e as seções
+(último frame + média móvel). Verificado: build Debug x64, dotnet build do SDK,
+`--acoustic-tests`/`--ui-tests`/`--scene-tests` e bootstrap do managed API OK.
+Limitações: VRAM é estimativa da engine (sem overhead de driver, mipmaps
+gerados internamente nem FBOs); GC só reporta quando o runtime C# está ativo;
+seções cobrem só os pontos instrumentados no Application — novos subsistemas
+devem usar `FrameSectionTimer`, não timers paralelos.
+
+M-012 (EM_ANDAMENTO) Frame Debugger e visualizações de diagnóstico
+Verificação: inspecionar render passes, overdraw, sombras, colisões e navegação.
+Notas: auditoria inicial encontrou contadores agregados do renderer e overlay de
+collider, sem captura/navegação de eventos por frame, overdraw nem inspeção de
+sombras/navegação. Implementado nesta retomada: captura opt-in dos últimos 120
+quadros do viewport, com draw calls, triângulos, entidades visíveis/culladas,
+estatísticas de sombra e tempos CPU/GPU disponíveis; o painel permite escolher
+um quadro e limpar a captura. Desativada, nenhuma lista é mantida. --diagnostic-tests
+valida o limite, sequência, limpeza e caminho desativado. Ainda faltam eventos
+detalhados por passe, visualização de overdraw e diagnósticos de navegação.
+
+M-013 (EM_ANDAMENTO) Build Windows reproduzível
+Verificação: exportar jogo para pasta limpa com DLLs e assets corretos.
+Notas: o exportador Desktop copia toda a árvore Assets, coleta DLLs de um
+diretório explícito, valida runtime C# e cena inicial e publica por staging com
+rollback. M-014 atualizou a busca do ScriptRuntime para preferir o runtime
+gerado pelo checkout atual. Build Debug x64, --export-tests e smoke test de
+pacote instalado passaram; ainda falta fechar a validação de Release e do
+processo de distribuição do editor em instalação limpa. HTML e Android seguem
+sem runtimes reais. Nesta retomada, --export-tests passou; build Release x64 e
+smoke test do pacote Release estão em validação.
+
+M-014 (FEITO) Configuração de build e publicação
+Verificação: nome, ícone, versão, resolução, janela, cena inicial e logs.
+Notas: diálogo Desktop configura nome do pacote e título, versão, ícone de
+janela, largura/altura, modo janela/sem borda/tela cheia e cena inicial. O
+manifesto inclui essas opções; o pacote traz MaraeBuild.log e o jogo grava
+MaraeGame.log. Validação de nome/versão/resolução/ícone ocorre antes do staging.
+Teste: Debug x64, dotnet build do runtime C# e --export-tests (11 cenários)
+passaram; smoke test local confirmou título/versão, ícone nativo, cena 2D,
+compilação dos scripts e resolução renderizada de 900x600. Outro smoke test
+confirmou janela sem borda sem legenda e compilação de scripts. O ícone
+configurado é aplicado à janela do jogo; o recurso do arquivo EXE no Explorer
+continua sendo o do executável Marae copiado. HTML e Android seguem sem runtime.
+
+M-015 (EM_ANDAMENTO) Documentação de início rápido
+Verificação: guia C# dentro do Script Editor, busca/cópia de exemplos, build do
+editor e validação interativa do fluxo de onboarding.
+Notas: o guia interno foi integrado ao Script Editor com tópicos sobre criação,
+compilação/anexação, ciclo de vida, entidades, transform, input, física, áudio,
+UI, animação, luz/materiais, eventos, depuração e limites do SDK. Build e
+Debug x64 passou. Checagem visual/interativa ainda pendente; não marcar como
+FEITO antes de abrir o painel e confirmar navegação, busca e cópia.
+
+M-016 (EM_ANDAMENTO) Exemplos oficiais funcionais
+Verificação: Pong, plataforma 2D, top-down, corrida, survival e exemplo 3D.
+Notas: existem exemplos C# compiláveis de ciclo de vida, input, física, áudio,
+UI, cena, luz e animação, mas ainda não há projetos completos de jogo para os
+seis gêneros desta verificação. Nesta retomada foram adicionados seis scripts
+de gameplay (Pong paddle, plataforma 2D, top-down 2D, corrida 3D, coleta de
+survival e câmera orbital) e um guia de montagem. ApiExamples.csproj recompilou
+com 0 avisos/erros. Ainda são scripts de referência, não projetos com cenas
+prontas; precisam de integração em cenas isoladas e Play validado antes de
+serem apresentados como jogos funcionais.
+
+================================================================================
+6. ROADMAP DE PRODUÇÃO AVANÇADA
+================================================================================
+
+M-017 (EM_ANDAMENTO) Animation State Machine, blend trees, layers e IK.
+Verificação: trocar estados sem perder pose, avaliar blend e preservar compatibilidade
+com clips antigos; layers/IK dependem do suporte a skeleton/ossos.
+Notas: transições bool agora têm cross-fade de pose configurável por transição;
+clips sem novo campo recebem 0,15 s e registros antigos continuam carregando.
+--animation-tests valida início em Play, troca de estado, pose intermediária e
+final, IDs e round-trip do controller. Blend trees, layers e IK ainda não existem;
+IK/layers aguardam suporte a skeleton e ossos, então o marco continua aberto.
+Retomada 2026-11-01: iniciou-se o suporte de importação de skin/ossos e clipes
+glTF/GLB, incluindo conversão FBX para GLB autocontido, reprodução de skinning,
+seleção de clipe importado e reassociação ao reabrir a cena. Build Debug x64
+passou; validação visual com FBX real, sombras esqueléticas e limites de formatos
+continua pendente. M-017 permanece EM_ANDAMENTO.
+M-018 (EM_ANDAMENTO) UI de runtime responsiva com anchors e layouts.
+Verificação: posição/tamanho adaptam ao canvas em resoluções distintas e dados
+antigos continuam preservados.
+Notas: adicionados AnchorMin/Max, offsets min/max, opção responsiva no Inspector,
+preview/editável, runtime e API C#. O registro @ui só ganhou campos opcionais no
+fim; layout legado permanece idêntico quando a opção está desligada. --ui-tests
+valida canvas em resoluções distintas, esticamento, compatibilidade e round-trip.
+Layout groups horizontal/vertical/grid, padding, espaçamento, stretch e scroll
+com clipping foram integrados ao preview e ao runtime. Testes automatizados e
+validação visual ainda pendentes; build Debug x64 passou em 2026-10-29.
+Manter EM_ANDAMENTO até executar as verificações funcionais do marco.
+M-019 (PLANEJADO) Navegação por controle e touch na UI.
+M-020 (EM_ANDAMENTO) Rich text, fontes, máscaras, scroll views e temas.
+Notas: rich text aceita <b>, <color=#RRGGBB>, <size=N> e <br>; scroll views
+recebem wheel, limite pelo conteúdo e recorte herdado; grupos de layout estão em
+M-018. A UI permite escolher por elemento Default/Segoe UI/Arial/Calibri/Consolas/
+Tahoma/Verdana, carregados como slots estáveis do atlas antes do frame. Fontes
+customizadas externas ainda precisam do pipeline de importação; build Debug x64
+passou em 2026-10-29, mas testes funcionais e validação visual estão pendentes.
+M-021 (EM_ANDAMENTO) Mixer de áudio, grupos, snapshots, efeitos e spatial audio.
+Notas: painel do mixer criado no Inspector, com edição de volume/mute/solo,
+subgrupos e snapshots com transição; estado persistido em Library/audio_mixer.cfg
+por projeto. Roteamento miniaudio agora segue grupo pai e corrige ganho efetivo
+aninhado. Spatial playback já existia; vozes 3D agora recebem filtro passa-baixa
+por voice, reduzindo o cutoff com oclusão/obstrução geométrica. Reverb de sala e
+outros efeitos por bus ainda não estão ligados à cadeia. Testes funcionais e
+validação visual estão pendentes.
+M-022 (PLANEJADO) NavMesh, agentes, avoidance e debug visual de caminhos.
+M-023 (FEITO) Behavior trees, state machines e perception system para IA.
+Verificação: detectar alvos por visão/tag, executar árvores com estados válidos,
+transicionar FSM, persistir configuração e atualizar somente durante Play.
+Notas: adicionado AIComponent com percepção visual por tag, alcance e campo de
+visão, memória temporária do último alvo, árvore com Root/Sequence/Selector/
+Inverter/condições/ações e FSM configurável no Inspector. O runtime é limitado
+por profundidade e orçamento de nós; configuração de árvore, estados, transições
+e percepção salva no arquivo da cena, mantendo compatibilidade com cenas antigas.
+--ai-tests valida visão, memória, árvore, FSM e exclusão de entidades do editor;
+--scene-tests valida round-trip da configuração e passou. Limites conhecidos:
+visão não faz raycast de oclusão, movimento de perseguir/fugir é steering planar
+direto e não usa NavMesh; audição, grupos e editor gráfico de nós ficam para
+marcos posteriores.
+M-024 (PLANEJADO) Localization de texto, assets, fontes e UI.
+M-025 (PLANEJADO) Terrain editor, foliage, água, clima, LOD e world streaming.
+M-026 (PLANEJADO) Integração Git com status, diffs, conflitos e locks.
+M-027 (PLANEJADO) Hot reload seguro para scripts e assets compatíveis.
+M-028 (PLANEJADO) Sistema de plugins para ferramentas e importadores.
+M-029 (PLANEJADO) Geração procedural com seeds reproduzíveis.
+M-030 (PLANEJADO) Runtime separado do editor e pacote de distribuição mínimo.
+
+================================================================================
+7. EXPANSÃO FUTURA
+================================================================================
+
+M-031 (NÃO_PRIORITÁRIO) Exportação Linux.
+M-032 (NÃO_PRIORITÁRIO) Exportação Web.
+M-033 (NÃO_PRIORITÁRIO) Exportação Android.
+M-034 (NÃO_PRIORITÁRIO) Exportação macOS/iOS.
+M-035 (NÃO_PRIORITÁRIO) Multiplayer, replicação e servidor autoritativo.
+M-036 (NÃO_PRIORITÁRIO) Cloud build e automação de publicação.
+M-037 (NÃO_PRIORITÁRIO) Marketplace de plugins e assets.
+M-038 (NÃO_PRIORITÁRIO) Suporte a consoles, somente após viabilidade técnica e legal.
+M-039 (TESTANDO) Controle local de projeção de sombras por objeto.
+O checkbox desliga a contribuição escura do objeto, preservando sua profundidade
+como bloqueador para sombras de objetos atrás e permitindo receber sombras.
+Implementação e build Debug x64 concluídas. Falta validação visual no editor.
+M-040 (EM_ANDAMENTO) Otimização de CPU/RAM sem perda visual perceptível.
+Verificação: identificar trabalho por quadro evitável e memória temporária
+repetidamente alocada; manter qualidade e formatos atuais. Medir antes/depois
+quando houver equipamento seguro para executar o renderer.
+Revisão [2026-11-21]: Ultra Performance agora ignora efeitos caros salvos na
+cena apenas no caminho de renderização e renderiza diretamente no alvo do
+viewport, sem redimensionar/usar o compositor HDR. O SceneRenderer também limita
+luzes locais, sombras e iluminação indireta sem alterar os dados autorais da
+cena. Build Debug x64 passou. O editor não foi iniciado por causa do histórico
+de tela preta/instabilidade do driver; benchmark e validação visual seguem
+pendentes, então M-040 continua EM_ANDAMENTO.
+M-041 (TESTANDO) Texturas por face para meshes triangulados.
+Verificação: validar atribuição, remoção sem perda de geometria, salvar/carregar
+cenas e prefabs e revisar a identificação de faces em malhas importadas.
+M-042 (TESTANDO) Composição de filtros de tela do Global Light.
+Verificação: validar imagem final de geometria e céu, exposição sem duplicação,
+TAA antes do tone mapping e fallback quando o pipeline HDR não inicializa.
+
+M-043 (TESTANDO) Consistência visual e clareza das ações no Inspector.
+Verificação: Build Debug x64 passou. A revisão visual interativa do Inspector
+permanece pendente.
+Notas: cabeçalhos dos componentes usam o azul Slate/Blue; os modos de edição
+ficaram mais claros; ações de prefab e escala usam ícones do catálogo Marae.
+
+M-044 (TESTANDO) Usabilidade e informação visual do gizmo de transformação.
+Verificação: Build Debug x64 passou. A revisão visual interativa e a verificação
+dos giros em ambos os lados do eixo permanecem pendentes.
+Notas: tamanho adaptável, rótulos de eixo, medidas ao vivo, áreas de captura e
+acumulação de ângulo foram implementados; seleção múltipla, docking e snap foram
+mantidos.
+
+M-045 (TESTANDO) Eficiência de iluminação artificial e projeção de sombras locais.
+Verificação: Build Debug x64 isolado passou. Falta validar imagem e custo em GPU.
+Notas: caches independentes por luz, seleção de casters por alcance/cone,
+descarte conservador de faces cubemap fora do cone Spot, hierarquia ativa memoizada,
+índice de filhos reutilizável, opacidade R16F e PCF local adaptativo. Area Light
+continua aproximada como fonte pontual com raio ampliado; não é uma integração
+física de área. Vulkan não foi incluído nesta revisão.
+
+M-046 (TESTANDO) Penumbra fisicamente coerente para Sol, Lua e luzes locais.
+Verificação: Debug x64 compilou. O usuário dispensou os testes de cena descritos
+no anexo; GLSL e imagem final não foram validados em runtime.
+Notas: penumbra derivada do vão oclusor-receptor, ângulo aparente da fonte
+direcional e raio das luzes locais; mantém CSM e cubemaps atuais, sem Gaussian
+Blur ou sistema redundante. Alcance de casters direcionais expande conforme altura
+real e elevação da fonte, limitado por ShadowDistance.
+
+M-047 (TESTANDO) Estabilidade temporal de sombras quando a câmera se move.
+Verificação: Build Debug x64 passou; renderer não foi iniciado conforme pedido
+do usuário para não executar os testes de cena. A correção visual ainda precisa
+ser conferida no viewport.
+Notas: o snap de texel do CSM era aplicado numa matriz já centralizada no frustum,
+onde o centro em XY permanecia zero; agora usa a orientação fixa da luz antes de
+posicionar a view, mantendo a projeção parada até o centro avançar um texel.
+A altura receptora usa o raio do frustum, invariável à rotação da câmera, para
+evitar redimensionar as cascatas ao olhar ao redor.
+
+M-048 (TESTANDO) Redução de serrilhado nas bordas das sombras direcionais.
+Verificação: Debug x64 compilou; o usuário dispensou abrir o renderer/testes de
+cena, então a suavidade final ainda precisa de confirmação visual.
+Notas: no preset Ultra, o PCF manual interpola quatro comparações de profundidade
+por amostra, sem interpolar profundidades entre caster e fundo; a opacidade do
+mapa de transparência usa filtragem linear. Preserva cascatas e amostras Poisson.
+Os demais níveis mantêm uma comparação por amostra para preservar o custo anterior.
+
+================================================================================
+8. O QUE NÃO DEVE SER PRIORIDADE AGORA
+================================================================================
+
+Não priorizar novos efeitos de pós-processamento, mais shaders experimentais,
+IA generativa, multiplayer ou APIs gráficas adicionais antes de estabilizar:
+
+- editor;
+- cenas;
+- prefabs;
+- assets;
+- input;
+- física;
+- scripting;
+- debugger;
+- profiler;
+- build/exportação;
+- documentação.
+
+Qualquer exceção precisa ser justificada e autorizada pelo usuário quando houver
+conflito com os itens prioritários.
+
+================================================================================
+9. REGISTRO DE DECISÕES E MEMÓRIA ENTRE AGENTES
+================================================================================
+
+Cada agente que fizer uma mudança relevante deve registrar:
+
+- data;
+- tarefa/ID;
+- arquivos alterados;
+- comportamento implementado;
+- testes executados;
+- resultado;
+- limitações conhecidas;
+- próxima ação recomendada.
+
+Não apagar decisões anteriores. Se uma decisão for substituída, manter a decisão
+antiga e registrar a nova com o motivo e a autorização correspondente.
+
+REGISTRO DE DECISÕES:
+
+[2026-11-21] [M-040] Limites seguros de renderização no perfil Ultra Performance.
+Motivo: projetos podiam restaurar efeitos pesados da cena e manter o compositor
+HDR ativo mesmo quando o perfil deveria priorizar compatibilidade e leveza.
+Autorizado por: solicitação do usuário para investigar o mapa que não conclui o
+carregamento e as ocorrências de tela preta ao iniciar no perfil Ultra Performance.
+Impacto: Renderer ignora SSAO, SSR, TAA, nuvens volumétricas, raios de luz,
+glare, bloom e vinheta no caminho de renderização do perfil; deixa de redimensionar
+e executar o framebuffer HDR, renderizando direto no viewport. SceneRenderer
+aplica caps temporários de luzes locais e iluminação/sombras avançadas. Valores
+salvos na cena não são alterados. Build Debug x64 passou.
+Limitação: a máquina tem histórico documentado de falha do driver Intel OpenGL
+com tela preta; o renderer não foi iniciado nem o problema visual reproduzido.
+Esta mudança reduz o trabalho do perfil, mas não prova que elimina falhas do
+driver ou travas causadas por carga/arquivos específicos da cena.
+
+[2026-11-11] [Arquitetura] Funções de áudio e UI 2D movidas para seus módulos.
+Motivo: solicitação direta do usuário para corrigir a mistura de funcionalidades
+— código de áudio e de UI 2D executava dentro de Core/Application.cpp.
+Autorizado por: solicitação direta do usuário ("é pra ficar no lugar deles,
+arrume isso"), com escopo confirmado como "só as funções de áudio/UI".
+Impacto: EvaluateAudioAcoustics e o teste de interseção AABB foram para
+Engine/Audio/AudioAcoustics (namespace AudioAcoustics::Evaluate). O update de
+áudio por frame (listener a partir da câmera, sync entidade↔voice, PlayOnStart,
+transforms e acústica por fonte, AudioSystem::Update) foi para
+Engine/Audio/AudioSceneSync, dono do conjunto de fontes já iniciadas.
+Application::UpdateUIInteraction delega a tradução ImGui->UIInputState e a
+chamada de MaraeUI::UpdateInteraction para Engine/UI/UIInputBridge; o despacho
+de eventos de script permanece no Application por depender do ScriptingRuntime.
+A duplicata de início de PlayOnStart em SetEditorState foi removida: o sync por
+frame é o único caminho, o que também corrige sons não-loop que reiniciavam por
+nunca entrarem no conjunto de iniciados e unifica a resolução de clip
+(ClipID->library->path relativo ao projeto). Build Debug x64 compilou em saída
+isolada (_build_verify); --acoustic-tests (3/3) e --ui-tests passaram.
+Limitações: validação interativa do Play com fontes sonoras audíveis ainda
+pendente; o exe x64/Debug estava em uso durante o link e não foi sobrescrito.
+Jogos demo (Race/Survival) e HUDs permanecem em Application.cpp por decisão de
+escopo do usuário.
+
+[2026-11-11] [Arquitetura] Jogos demo Race/Survival extraídos para Engine/DemoGames.
+Motivo: continuação da separação de funcionalidades — ~1.500 linhas de lógica
+de jogo (estado, update, HUD, mundo voxel, save/load) executavam dentro de
+Core/Application.cpp, misturando gameplay com orquestração do editor.
+Autorizado por: solicitação direta do usuário ("vamos começar com o 1"),
+com ordem explícita: extração dos demos -> commit de segurança -> M-008.
+Impacto: criado Engine/DemoGames com DemoGameContext (Scene, Window, câmera
+fly, ProjectPath e flag EditMode — único ponto de contato com a engine),
+RaceGame (rota, checkpoints, IA de tráfego, câmera de perseguição, HUD) e
+SurvivalGame (primeira pessoa, voxel world, coleta/crafting, autosave,
+restauração de malha ao sair do Play). Application mantém apenas a integração
+de ciclo de vida: ativação por entidades convencionais (PlayerCar/AI_Car_*,
+SurvivalPlayer/Toolbox), update no Play, HUD no Draw e Save nos pontos de
+saída (destrutor, hub, troca de projeto, saída do Play, autosave interno).
+Build Debug x64 compilou em saída isolada; --acoustic-tests (3/3),
+--ui-tests e --scene-tests passaram.
+Limitações: os jogos continuam embutidos na engine por decisão de design
+(são demos que ativam por convenção de nomes na cena); validação interativa
+do Play (corrida e sobrevivência jogáveis) ainda pendente; o membro morto
+m_SurvivalArmSwingTime foi descartado por não ter uso.
+
+[2026-10-28] [Renderer] Corrigida extração dos planos de frustum para culling.
+Motivo: meshes diante da câmera e casters de sombra desapareciam ao mover a
+câmera; a extração tratava colunas da matriz GLM como linhas.
+Autorizado por: solicitação direta do usuário para investigar e corrigir a
+renderização e as sombras do viewport.
+Impacto: culling visual, cascatas direcionais e sombras locais agora usam os
+planos extraídos corretamente do view-projection. O novo --frustum-tests cobre
+frente/atrás, near/far e câmera transladada/rotacionada; build Debug x64 passou.
+Limitação: sem captura visual interativa nesta validação.
+
+[2026-10-27] [M-023] Runtime básico de IA integrado à cena e ao Play.
+Motivo: o painel de IA existente gerava scripts mas não oferecia comportamento
+de IA nativo reutilizável no runtime.
+Autorizado por: solicitação direta do usuário para fazer M-023.
+Impacto: AIComponent e AISystem implementam percepção visual com memória,
+behavior tree e FSM; o Inspector permite configurar os dois modos; cenas
+persistem esses dados em metadados opcionais. O sistema atualiza apenas no Play,
+antes da simulação de física. Build Debug x64, --ai-tests (6 verificações) e
+--scene-tests (round-trip) passaram. Os avisos C4828, C4005 e C4267 da lista
+colada são de arquivos de terceiros/renderer e não foram introduzidos por M-023.
+Limitação: sem LOS/oclusão, percepção auditiva ou pathfinding; steering é planar.
+
+[2026-10-26] [M-009/M-010] Debugger C# e contrato público do SDK implementados.
+Motivo: tornar scripts diagnosticáveis e documentar a API real disponível sem
+duplicar ou remover sistemas existentes.
+Autorizado por: solicitação direta do usuário para fazer M-009 e M-010.
+Impacto: novos callbacks nativos são anexados ao fim do ABI; o painel Debug
+ganha diagnóstico de scripts; exemplos e docs foram adicionados. Nenhum recurso
+existente ou projeto do usuário foi removido.
+
+[2026-10-26] [M-013] Build Windows reproduzível e publicação transacional.
+Motivo: evitar pastas de exportação incompletas, dependências variáveis do
+diretório de trabalho e perda de assets com extensões fora da lista antiga.
+Autorizado por: solicitação direta do usuário para fazer M-013.
+Impacto: exportação monta uma pasta limpa ao lado do destino, copia todos os
+assets, valida runtime gerenciado/cena inicial e publica somente ao final;
+reexportações removem arquivos obsoletos. Build Debug x64 e --export-tests
+passaram (0 falhas). Revisão final encontrou que MaraeGame.exe é um binário
+local sem projeto-fonte reproduzível e ausente do pacote oficial; M-013 fica
+(REVISAR) até haver um alvo/runtime Windows compilável e distribuído.
+
+[2026-10-26] [M-014] Configuração de build e publicação.
+Motivo: permitir que cada pacote Desktop identifique o jogo e inicie com a
+janela, cena e versão configuradas, além de registrar diagnóstico da build e
+do runtime.
+Autorizado por: solicitação direta do usuário para fazer M-014.
+Impacto: o exportador valida os dados, grava manifesto/log e inclui o ícone;
+o runtime aplica título, versão, ícone e modo/resolução; a cena inicial pode
+ser escolhida no diálogo. O runtime C# atual é priorizado sobre cópias Release
+antigas e os callbacks gerenciados ficam enraizados durante a vida do host.
+Debug x64, build do runtime C# e --export-tests (11 cenários) passaram. Smoke
+tests do pacote validaram cena 2D, scripts compilados, janela 900x600, título,
+ícone e modo sem borda. O EXE continua com o ícone de arquivo da Marae;
+HTML/Android e validação Release permanecem fora deste marco.
+
+[2026-10-26] [M-015] Guia C# integrado ao Script Editor.
+Motivo: permitir que quem cria scripts consulte a API e exemplos sem sair do
+editor, reduzindo chamadas inexistentes e erros de integração.
+Autorizado por: solicitação direta do usuário para criar documentação completa
+de scripts C# dentro do editor interno.
+Impacto: painel pesquisável com tópicos, exemplos copiáveis e orientação
+compatível com o SDK público; API.md foi ampliada como referência complementar.
+Limitações: o guia descreve a API 1.0 existente e declara recursos não expostos;
+build Debug x64 passou; validação visual e interativa do painel ainda pendente.
+
+[2026-10-27] [M-001/M-005] Resultado explícito de salvamento de cena.
+Motivo: Save As verificava apenas se o arquivo de destino existia, podendo
+reportar sucesso quando uma gravação falhava e o destino antigo permanecia.
+Autorizado por: solicitação direta para verificar e melhorar M-001 até M-005.
+Impacto: Application::SaveScene retorna bool; SceneManager só atualiza a cena
+ativa após gravação confirmada. A suíte --scene-tests cobre um destino
+impossível de criar e confirma que o caminho ativo permanece intacto. Build
+Debug x64 e as quatro suítes relacionadas passaram; abertura/fechamento
+interativos do editor continuam pendentes para M-001.
+
+[2026-10-27] [M-002/M-004] Recuperação e persistência de ferramentas centrais.
+Motivo: confirmar que falhas de escrita não apagam estado de recuperação ou
+metadados de assets e que estado de um projeto não vaza para outro.
+Autorizado por: solicitação direta para verificar e melhorar M-002 a M-004.
+Impacto: snapshot de recuperação usa o retorno explícito de SaveScene; falha
+mantém a cena suja e o diálogo só confirma restauração se LoadScene tiver êxito.
+AssetDatabase é gravado em arquivo temporário com backup, tenta recuperar JSON
+principal inválido e reseta estatísticas/avisos ao carregar projeto sem banco.
+--recovery-tests, --diagnostic-tests e --asset-tests passaram; Debug x64 passou.
+M-002 segue TESTANDO até validar restauração interativa e restart real.
+
+[2026-10-27] [M-006/M-010] Revisão de prefabs, Input Map, debugger e SDK.
+Motivo: auditar marcos concluídos e corrigir lacunas que afetavam persistência,
+breakpoints com namespace e cobertura de regressão dos componentes.
+Autorizado por: solicitação direta do usuário para verificar M-006 a M-010 e
+melhorar apenas quando necessário.
+Impacto: testes de prefab passaram a verificar propagação e overrides de luz e
+áudio; Input Map agora valida entradas, persiste limpeza/dead zones e troca seu
+arquivo de configuração via temporário recuperável; Continue do debugger usa a
+chave exata que disparou o breakpoint. Debug x64 recompilado; --prefab-tests,
+--input-tests, --script-debug-tests e build ApiExamples passaram.
+Limitação: M-008 continua PLANEJADO; overlay de collider existe, mas não há
+diagnóstico completo de triggers, layers, raycasts e contatos nem validação de
+física 2D separada. M-006 ainda não persiste overrides individuais de filhos.
+
+[2026-10-27] [M-001/M-002/M-008/M-011/M-012/M-013/M-015/M-016] Retomada dos
+marcos incompletos até M-016.
+Motivo: iniciar trabalho em todos os itens até M-016 sem declarar protótipos ou
+testes parciais como conclusão.
+Autorizado por: solicitação direta do usuário para iniciar todos os M-X não
+feitos até M-016.
+Impacto: os itens incompletos foram movidos para EM_ANDAMENTO. Reexecutados e
+aprovados --diagnostic-tests, --asset-tests, --recovery-tests, --scene-tests,
+--physics-tests e --export-tests. Auditoria inicial confirmou que M-011 já tem
+telemetria agregada de frame/renderer/CPU/RAM, mas falta breakdown de scripts e
+GC; M-012 ainda não captura eventos de render por frame; M-016 possui snippets
+C# compiláveis, mas não os projetos de jogo especificados. M-013 está em build
+Release x64 para validação adicional.
+Limitação: M-001/M-002 ainda precisam de verificação interativa/entre processos;
+M-008 ainda não tem layers/filtros, raycasts ou contatos; M-015 requer validação
+visual do painel interno; M-016 precisa dos projetos demonstrativos completos e
+execuções verificadas. Durante a validação da API, um falso negativo nos testes
+de input foi corrigido atualizando o InputMap ao simular teclado/mouse; runtime
+gerenciado reconstruído sem avisos e --script-api-tests passou 18/18 em 2D e 3D.
+
+[2026-10-27] [M-008/M-011/M-012] Implementação de triggers, profiler de scripts
+e captura de quadros.
+Motivo: avançar marcos incompletos com recursos reais e regressões executáveis.
+Autorizado por: solicitação direta do usuário para fazer os itens M-X pendentes
+até M-016.
+Impacto: IsTrigger atravessa serialização de cena/prefab e API C#, não resolve
+colisões e desenha estado explícito no viewport; tempos por callback são medidos
+apenas quando habilitados; o Frame Debugger mantém até 120 snapshots selecionáveis
+e desativados não alocam histórico. Debug x64 e runtime C# reconstruídos;
+--physics-tests, --prefab-tests, --diagnostic-tests, --export-tests e
+--script-api-tests (18/18 em 2D e 18/18 em 3D) passaram.
+Limitação: M-008 ainda precisa de layers/filtros, raycasts e contatos; M-011
+precisa de GC/VRAM e tempos por sistema; M-012 ainda não captura eventos de cada
+render pass nem overdraw. M-001/M-002/013/015/016 continuam abertos.
+
+[2026-10-27] [M-016] Adicionados seis exemplos de gameplay C# e instruções de
+montagem.
+Motivo: transformar os exemplos gerais da API em receitas concretas para os
+gêneros indicados na verificação do marco.
+Autorizado por: solicitação direta do usuário para implementar os marcos M-X
+pendentes até M-016.
+Impacto: exemplos compilados pelo projeto ApiExamples; o guia descreve quais
+objetos/componentes e controles a cena precisa. Não foram descritos como jogos
+prontos, pois as cenas ainda não foram criadas nem testadas em Play.
+Limitação: M-016 permanece EM_ANDAMENTO até a entrega de cenas demonstrativas
+isoladas e validação real do Play.
+
+[2026-10-26] [M-039] Controle local de projeção de sombras por objeto.
+Motivo: permitir excluir objetos físicos dos mapas de sombra sem alterar as
+configurações globais ou o comportamento de recepção de sombras.
+Autorizado por: solicitação direta do usuário para adicionar liga/desliga de
+projeção de sombras locais no Inspector dos objetos físicos.
+Impacto: checkbox por entidade controla a contribuição da entidade nas sombras
+direcionais e locais, sem removê-la do depth buffer de oclusão; a geometria segue
+bloqueando casters mais distantes e recebendo sombras. Estado é salvo em
+cenas/prefabs, tem padrão ligado em arquivos antigos e é preservado ao duplicar
+e ao aplicar overrides de prefab. Build Debug x64 passou.
+Limitação: teste visual/interativo ainda pendente; o item permanece TESTANDO.
+
+[Data] [ID] [Decisão]
+Motivo:
+Autorizado por:
+Impacto:
+
+[2026-10-27] [M-017/M-018] Cross-fade de transições e anchors responsivos.
+Motivo: fazer transições da máquina de animação preservarem visualmente a pose e
+permitir que UI de jogo se adapte a diferentes dimensões de canvas sem migrar à
+força cenas antigas.
+Autorizado por: solicitação direta do usuário para fazer M-017 e M-018; o usuário
+confirmou a correção do número antes da finalização.
+Impacto: cada transição de estado serializa uma duração de blend opcional; UI
+recebe anchors min/max, offsets, resolução de retângulo, edição/preview e acesso
+por C#. Debug x64, runtime C# e --animation-tests/--ui-tests passaram.
+Limitações: M-017 ainda requer blend trees, skeletal layers e IK. Não foi feita
+validação visual manual no editor nesta sessão.
+
+[2026-10-29] [M-018/M-020/M-021] Layouts e scroll de UI, rich text/temas e mixer.
+Motivo: tornar os marcos de interface e áudio utilizáveis sem substituir os
+sistemas existentes nem quebrar cenas antigas.
+Autorizado por: solicitação direta do usuário para executar M-020, M-021 e M-018.
+Impacto: grupos horizontal/vertical/grade, scroll com clipping, marcação de texto,
+temas, painel de buses/snapshots e roteamento hierárquico de áudio. Metadado novo
+é opcional e dados antigos mantêm defaults.
+Limitações: fontes customizadas externas, reverb e efeitos por bus ainda faltam.
+Build Debug x64 passou após as últimas alterações; testes automatizados não foram
+executados e não houve validação visual manual.
+
+[2026-11-01] [M-001] Proteções para falha de driver gráfico Intel na abertura.
+Motivo: evento WER do Windows registrou APPCRASH da Marae em igxelpicd64.dll
+(Intel OpenGL, versão 32.0.101.7092, exceção c0000005) junto a LiveKernelEvent
+1b8/1a8 no mesmo instante relatado pelo usuário.
+Impacto: a inicialização agora pula a sondagem experimental Vulkan em Intel UHD/
+HD legado identificado pelo renderer OpenGL; o Project Hub avisa antes de abrir
+qualquer projeto 3D nessa classe de GPU, inclusive no perfil Ultra Performance.
+Intel Arc fica fora dessa proteção. Debug x64 compilado em diretório isolado.
+Limitação: a evidência aponta para falha no driver OpenGL, então pular a sondagem
+Vulkan não corrige a causa do crash. O aviso previne abertura sem alerta, mas não
+garante estabilidade; não foi iniciado o editor nem repetida a falha por segurança.
+Próxima ação: confirmar atualização/reinstalação do driver Intel e fazer uma
+abertura controlada somente após o usuário confirmar que o driver foi corrigido.
+
+[2026-11-01] [M-001] Removida leitura duplicada da cena inicial.
+Motivo: durante o construtor, Application::LoadScene lia a cena e em seguida
+SceneManager::LoadScene lia a mesma cena novamente, recriando os objetos e
+prolongando a tela de carregamento em projetos grandes.
+Impacto: SceneManager passa a ser o único carregador da cena inicial e mantém o
+registro da cena ativa consistente. Build Debug x64 incremental passou.
+Limitação: não foi aberto o editor neste notebook por causa da falha recente de
+driver. O processo da Marae não estava ativo durante a investigação, então a
+correção de duração da inicialização ainda precisa de validação interativa.
+
+[2026-11-01] [M-040] Redução de alocações de skinning e sincronização no Hub.
+Motivo: reduzir trabalho repetido em animações esqueléticas e garantir que o
+Project Hub respeite a preferência de VSync já salva pelo usuário.
+Autorizado por: solicitação direta do usuário para reduzir RAM/CPU sem alterar
+o realismo visual perceptível.
+Impacto: buffers temporários de skinning agora são reutilizados por thread,
+poses idênticas não são recalculadas e o Project Hub aplica VSync ao iniciar e
+quando a opção muda. Não foram reduzidas sombras, resolução, distância, efeitos
+ou qualidade de materiais.
+Limitação: M-040 permanece EM_ANDAMENTO; ainda falta benchmark de CPU/RAM e
+validação interativa em hardware seguro. Não executei o renderer devido ao
+histórico recente de falha de driver relatado para este notebook.
+
+[2026-11-01] [M-041] Aplicação global ou individual de texturas por face.
+Motivo: permitir usar uma textura na malha inteira ou atribuir/remover imagens
+por face sem destruir a geometria.
+Autorizado por: solicitação direta do usuário para texturizar todas as faces ou
+administrar texturas individualmente por face.
+Impacto: o Inspector oferece alternância de todas as faces/por face e uma lista
+paginada; faces sem textura seguem existindo. As atribuições são salvas em cenas
+e prefabs, compatíveis com arquivos antigos, e desenhos adjacentes com mesma
+textura são agrupados para reduzir chamadas de renderização. Build Debug x64
+passou em saída isolada.
+Limitação: M-041 permanece TESTANDO até validar no viewport. Face é inferida de
+triângulos coplanares adjacentes; malhas importadas sem topologia explícita podem
+apresentar agrupamentos diferentes do conceito de face do programa de origem.
+
+[2026-11-01] [M-042] Conexão dos filtros do Global Light ao compositor HDR.
+Motivo: filtros eram convertidos para BlendedSettings, mas Renderer não chamava
+PostProcessingPipeline::Execute; assim vários controles não atingiam a imagem
+final e parte da correção de cor só atingia o céu.
+Autorizado por: solicitação direta do usuário para analisar e melhorar os filtros
+de tela no Global Light.
+Impacto: cenas 3D são compostas pelo pipeline HDR existente; correção de cor e
+efeitos passam a tratar céu e geometria em conjunto. O céu deixa de receber a
+mesma correção antes do composite. Exposição Global é aplicada uma vez; o caminho
+TAA resolve o histórico antes dos filtros de cor. Inspector reorganizado em
+correção de cor e efeitos de lente/filme. Build Debug x64 passou isoladamente.
+Limitação: M-042 permanece TESTANDO até validação visual em GPU compatível. O
+compositor HDR acrescenta um passe fullscreen ao viewport 3D; não foi possível
+medir impacto ou imagem neste notebook sem executar o driver gráfico.
+
+[2026-11-13] [M-039] Penumbra de sombras por vão oclusor→receptor.
+Motivo: o usuário pediu sombra realista — concentrada quando o objeto está
+perto do chão e progressivamente embaçada conforme o vão aumenta.
+Autorizado por: solicitação direta do usuário.
+Impacto: `CalculateShadowCascade` e `CalculatePointShadow` (cobre point e spot)
+amostram a profundidade do oclusor no centro do texel e derivam
+`occlusionSoftness` do vão oclusor→receptor em unidades de mundo. O spread do
+PCF Poisson varia de ~0.5 texel (contato, borda quase perfeita) a ~8 texels
+(vão máximo, sombra difusa). Cascatas direcional recebem o novo uniform
+`u_ShadowCascadeDepthRanges` (farPlane-nearPlane do ortho de luz, calculado em
+`BuildStableDirectionalShadowMatrix` e cacheado junto às matrizes);
+point/spot usam o próprio farPlane. O efeito respeita os toggles existentes
+"Desfoque por distância" (sol e por luz local) — desligado, comportamento
+anterior. Build Debug x64 passou; engine executou ~20s sem crash e sem
+`shader_error.log` (GLSL compila/vincula). Nenhum sistema antigo foi removido:
+os uniforms legados u_ShadowMap/u_ShadowOpacityMap continuam declarados.
+Limitação: a qualidade visual (nitidez do contato vs. difusão ao longe) ainda
+não foi validada em viewport — o usuário deve conferir no editor e, se o
+caráter do desfoque estiver forte/fraco demais, ajustar as constantes
+`occluderGap * 0.30` (direcional) e `* 0.35` (locais) e os multiplicadores
+`mix(0.55, 6.5, ...)` / `mix(0.55, 2.8, ...)` em Shader.cpp. O backend Vulkan
+experimental não recebeu a mesma melhoria.
+
+[2026-11-17] [M-043] Limpeza visual e clareza das ações do Inspector.
+Motivo: reduzir a variação de cores dos componentes e deixar ações importantes
+de modo, prefab e escala fáceis de identificar.
+Autorizado por: solicitação direta do usuário para limpar a interface e melhorar
+os botões no Inspector.
+Impacto: cabeçalhos dos componentes agora seguem o azul Slate/Blue; modos
+Inspector/Modelador mostram o estado ativo e usam ícones; ações de prefab usam
+nomes completos e hierarquia visual clara; escala proporcional/livre e reset
+usam ícones vetoriais do catálogo. Nenhum callback ou comportamento foi alterado.
+Debug x64 compilou com sucesso.
+Limitação: não abri o renderer para validar visualmente os tamanhos e os estados
+de hover no Inspector.
+
+[2026-11-18] [M-044] Usabilidade e informação visual do gizmo.
+Motivo: tornar mover, girar e escalar mais previsíveis, com feedback claro
+durante a manipulação.
+Autorizado por: solicitação direta do usuário para melhorar o gizmo e incluir
+informações visuais úteis.
+Impacto: tamanho das alças acompanha o viewport; setas de mover terminam nas
+pontas dos eixos; rotação usa orientação projetada e acumula voltas completas;
+os alvos de clique foram ampliados; eixos recebem rótulos e o arraste exibe
+deslocamento, graus ou fator de escala. Build Debug x64 passou.
+Limitação: o viewport não foi aberto para validar o resultado visual ou a
+interação com o mouse.
+Revisão [2026-11-18]: corrigidas as linhas cruzadas nas alças de escala por face;
+a conversão do arraste para escala local considera a escala atual do objeto; eixos
+quase alinhados à câmera mantêm um indicador visual estável. Build Debug x64 passou;
+interação visual com o mouse ainda pendente.
+Revisão [2026-11-19]: adicionada esfera central ao gizmo Mover. Arrastar essa alça
+translada o objeto livremente no plano da câmera; a esfera informa o modo por hover.
+
+[2026-11-19] [M-045] Otimização da criação e projeção de luzes artificiais.
+Motivo: reduzir trabalho repetido e custo de renderização dos mapas de sombras
+locais, sobretudo Spot Lights, sem iniciar o renderer no notebook com histórico
+de instabilidade de driver.
+Autorizado por: solicitação direta do usuário para concluir e otimizar luz
+artificial e verificar processamento/projeção.
+Impacto: luzes locais sem contribuição visível deixam de ocupar slots; cada mapa
+usa assinatura e cache próprios; casters são filtrados por alcance e, em Spot,
+por cone conservador; faces cubemap fora do cone são limpas e não desenham meshes.
+A hierarquia ativa usa índice de entidades e memoização; a família da luminária
+usa listas de filhos reutilizáveis em vez de buscas completas repetidas. Mapas de
+opacidade locais usam R16F (metade da memória de R32F), e PCF local reduz amostras
+para 4/8 quando a suavidade permite, mantendo 16 no modo mais suave. Build Debug
+x64 isolado passou e git diff --check passou.
+Limitação: não foi aberto o editor para validar a imagem nem medir FPS/GPU, pois
+isso inicializaria o driver gráfico. Não havia glslangValidator/glslc disponível
+para validar GLSL separadamente. Area Light continua sendo aproximação de fonte
+pontual; a revisão não cria um sistema de integração de área física. Vulkan não
+foi coberto.
+
+[2026-11-19] [M-046] Penumbra por tamanho aparente da fonte e distância geométrica.
+Motivo: substituir espalhamento em texels com fatores fixos por penumbra vinculada
+às propriedades da fonte e ao vão entre oclusor e receptor.
+Autorizado por: especificação enviada pelo usuário sobre sombras fisicamente
+realistas. O usuário dispensou os testes de cena detalhados no anexo.
+Impacto: configuração persistente do diâmetro angular direcional (padrão 0,53°),
+penumbra solar calculada por vão × tangente do raio angular, penumbra Point/Spot
+calculada pelo raio físico da fonte e relação vão/distância do bloqueador, filtro
+PCF adaptativo de 4/8/16 amostras, bias de contato reduzido perto do receptor sem
+adicionar uma segunda sombra, amostragem direcional fixa para evitar ruído preso
+à tela e expansão da área de casters conforme a elevação solar. Build Debug x64
+isolado passou e git diff --check passou.
+Limitação: não houve compilação GLSL nem execução/renderização solicitadas pelo
+usuário; portanto qualidade, estabilidade temporal e custo real de GPU seguem sem
+validação visual/benchmark. Area Light permanece aproximada, não fisicamente
+integrada. Vulkan não foi alterado.
+
+[2026-11-19] [M-047] Encaixe temporal das cascatas direcionais.
+Motivo: a sombra treme quando a câmera se movimenta, apesar do código aparentar
+usar snap por texel.
+Impacto: o snap anterior ocorria depois de centralizar a view da luz, portanto o
+centro XY era sempre zero e a matriz não ficava quantizada no espaço do mundo.
+Agora a posição do frustum é quantizada na base fixa da luz, e o raio usado para
+estimar o receptor não muda quando a câmera gira. A verificação visual ainda
+depende do viewport; o renderer não foi executado a pedido do usuário.
+
+[2026-11-19] [M-048] Antialiasing do filtro PCF das sombras direcionais.
+Motivo: mesmo no preset máximo, a silhueta da sombra apresentava degraus visíveis.
+Impacto: cada posição do kernel ainda fazia comparação de um único texel, então a
+resolução do mapa não suavizava a borda abaixo do tamanho de um texel. No preset
+Ultra, a nova função interpola quatro resultados de comparação na vizinhança e
+mantém a profundidade discreta; os outros níveis preservam o custo anterior. O
+canal de opacidade passa a ser filtrado linearmente.
+Build compila o shader C++ embutido, mas o GLSL e a aparência não foram verificados
+em runtime porque o renderer não foi aberto.
+
+================================================================================
+10. CHECKLIST FINAL OBRIGATÓRIO DO AGENTE
+================================================================================
+
+[ ] Li este arquivo antes de trabalhar.
+[ ] Verifiquei se a funcionalidade já existia.
+[ ] Não alterei regras sem autorização direta.
+[ ] Mantive compatibilidade com projetos existentes.
+[ ] Atualizei o status da tarefa corretamente.
+[ ] Compilei o que foi afetado, quando possível.
+[ ] Executei testes ou registrei por que não foi possível.
+[ ] Atualizei a documentação necessária.
+[ ] Registrei limitações e próximos passos.
+[ ] Não marquei como (FEITO) algo não verificado.
+[ ] Informei claramente o usuário sobre o resultado.
+
+================================================================================
+FIM DO ARQUIVO — NÃO ALTERAR AS REGRAS SEM AUTORIZAÇÃO DIRETA DO USUÁRIO
+================================================================================
