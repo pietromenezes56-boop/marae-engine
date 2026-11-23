@@ -199,7 +199,7 @@
   "hub.quality_performance": "Menos efeitos, mais FPS.\nIdeal para hardware limitado.",
   "hub.quality_balanced": "Equilibrio entre qualidade e desempenho.\nRecomendado para a maioria.",
   "hub.quality_ultra": "Sombras dedicadas e nuvens completas.\nRequer GPU dedicada.",
-  "hub.quality_performance_name": "Desempenho",
+  "hub.quality_performance_name": "Performance",
   "hub.quality_balanced_name": "Equilibrado",
   "hub.quality_ultra_name": "Ultra",
   "component.add": "Adicionar Componente",
