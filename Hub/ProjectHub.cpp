@@ -891,9 +891,11 @@ void ProjectHub::RenderNewProjectModal()
     if (m_FontBold) ImGui::PushFont(m_FontBold);
     ImGui::TextUnformatted(L("hub.graphics_quality"));
     if (m_FontBold) ImGui::PopFont();
+    ImGui::TextDisabled("%s", L("hub.quality_scale_hint"));
     ImGui::Dummy({0,6.f});
 
     struct QCard { GraphicsQuality q; const char* n; const char* d; };
+    // A ordem visual acompanha a exigência gráfica, da menor para a maior.
     static const QCard qc[] = {
         {GraphicsQuality::UltraPerformance, L("hub.quality_ultra_performance_name"), L("hub.quality_ultra_performance")},
         {GraphicsQuality::Performance,      L("hub.quality_performance_name"),       L("hub.quality_performance")},

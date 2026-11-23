@@ -378,8 +378,8 @@
   "component.add_local_light": "Añadir luz local",
   "hub.quality_high": "Alta calidad visual con MSAA 8x y mapas de sombras 4096.",
   "hub.quality_high_name": "Alta calidad",
-  "hub.quality_ultra_performance": "Máxima tasa de cuadros con efectos visuales reducidos (FXAA).",
-  "hub.quality_ultra_performance_name": "Ultra rendimiento",
+  "hub.quality_ultra_performance": "Menor exigencia gráfica: prioriza FPS y desactiva las sombras dinámicas y las nubes.",
+  "hub.quality_ultra_performance_name": "Ultra bajo",
   "inspector.local_light": "Luz local",
   "inspector.no_local_light": "Este objeto no tiene un componente de luz local.",
   "settings.api_active": "Renderizador activo: %s",
@@ -408,5 +408,6 @@
   "settings.vulkan_accept": "Aceptar y activar Vulkan",
   "settings.vulkan_cancel": "Cancelar",
   "settings.vulkan_not_active_note": "El renderizador de escenas puede seguir usando OpenGL mientras el soporte de Vulkan esté en fase experimental.",
-  "settings.vulkan_warning": "Vulkan es experimental y, según la tarjeta gráfica y el controlador, puede causar fallos visuales, cierres inesperados o inestabilidad. Continúa solo si aceptas estos riesgos."
+  "settings.vulkan_warning": "Vulkan es experimental y, según la tarjeta gráfica y el controlador, puede causar fallos visuales, cierres inesperados o inestabilidad. Continúa solo si aceptas estos riesgos.",
+  "hub.quality_scale_hint": "La exigencia gráfica aumenta de izquierda a derecha."
 }

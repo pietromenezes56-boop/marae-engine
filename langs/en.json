@@ -378,8 +378,8 @@
   "component.add_local_light": "Add Local Light",
   "hub.quality_high": "High visual quality with 8x MSAA and 4096 shadow maps.",
   "hub.quality_high_name": "High Quality",
-  "hub.quality_ultra_performance": "Maximum frame rate with reduced visual effects (FXAA).",
-  "hub.quality_ultra_performance_name": "Ultra Performance",
+  "hub.quality_ultra_performance": "Lowest graphics demand: prioritizes frame rate with dynamic shadows and clouds disabled.",
+  "hub.quality_ultra_performance_name": "Ultra Low",
   "inspector.local_light": "Local Light",
   "inspector.no_local_light": "This object has no local light component.",
   "settings.api_active": "Active renderer: %s",
@@ -408,5 +408,6 @@
   "settings.vulkan_accept": "Accept and Enable Vulkan",
   "settings.vulkan_cancel": "Cancel",
   "settings.vulkan_not_active_note": "The scene renderer may continue using OpenGL while Vulkan support is experimental.",
-  "settings.vulkan_warning": "Vulkan is experimental and may cause visual glitches, crashes, or instability depending on your GPU and driver. Continue only if you accept these risks."
+  "settings.vulkan_warning": "Vulkan is experimental and may cause visual glitches, crashes, or instability depending on your GPU and driver. Continue only if you accept these risks.",
+  "hub.quality_scale_hint": "Graphics demand increases from left to right."
 }
