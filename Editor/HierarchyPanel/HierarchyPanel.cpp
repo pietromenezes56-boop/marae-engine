@@ -13,6 +13,7 @@
 #include "../UI/EditorIcons.h"
 #include <string>
 #include <cstring>
+#include <cstdio>
 #include <imgui.h>
 #include <algorithm>
 #include <cstdint>
@@ -56,7 +57,77 @@ namespace
     uint64_t s_ContextRenameEntityID = 0;
     char s_ContextRenameBuffer[256]{};
     bool s_ContextRenameFocusPending = false;
+    uint64_t s_InlineRenameEntityID = 0;
+    char s_InlineRenameBuffer[256]{};
+    bool s_InlineRenameFocusPending = false;
     int s_HierarchyForceTreeState = -1; // -1 normal, 0 collapse, 1 expand
+
+    bool IsHierarchyNameDoubleClicked(const Entity& entity, const ImVec2& rowMin,
+                                      const ImVec2& rowMax)
+    {
+        const ImVec2 mouse = ImGui::GetIO().MousePos;
+        const float textStart = rowMin.x + 32.0f;
+        const float textEnd = textStart + ImGui::CalcTextSize(entity.GetName().c_str()).x + 8.0f;
+        return ImGui::IsWindowHovered() && ImGui::IsMouseDoubleClicked(0) &&
+            mouse.x >= textStart && mouse.x <= textEnd &&
+            mouse.y >= rowMin.y && mouse.y <= rowMax.y;
+    }
+
+    void BeginHierarchyInlineRename(const Entity& entity)
+    {
+        s_InlineRenameEntityID = entity.GetID();
+        std::snprintf(s_InlineRenameBuffer, sizeof(s_InlineRenameBuffer), "%s",
+            entity.GetName().c_str());
+        s_InlineRenameFocusPending = true;
+    }
+
+    void DrawHierarchyInlineRename(Application& app, Entity& entity,
+                                    const ImVec2& rowMin, const ImVec2& rowMax)
+    {
+        if (s_InlineRenameEntityID != entity.GetID())
+            return;
+
+        const float inputX = rowMin.x + 32.0f;
+        const float windowRight = ImGui::GetWindowPos().x +
+            ImGui::GetWindowContentRegionMax().x;
+        const float inputRight = windowRight - 24.0f;
+        const float inputWidth = std::max(80.0f, inputRight - inputX);
+        const ImVec2 cursorBeforeInput = ImGui::GetCursorScreenPos();
+
+        ImGui::SetCursorScreenPos(ImVec2(inputX, rowMin.y + 1.0f));
+        ImGui::SetNextItemWidth(inputWidth);
+        ImGui::PushID(static_cast<int>(entity.GetID() & 0x7fffffff));
+        if (s_InlineRenameFocusPending)
+        {
+            ImGui::SetKeyboardFocusHere();
+            s_InlineRenameFocusPending = false;
+        }
+
+        const bool submitted = ImGui::InputText("##HierarchyInlineRename",
+            s_InlineRenameBuffer, sizeof(s_InlineRenameBuffer),
+            ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+        const bool cancelled = ImGui::IsItemActive() && ImGui::IsKeyPressed(ImGuiKey_Escape);
+        const bool finished = submitted || ImGui::IsItemDeactivated();
+        ImGui::PopID();
+        ImGui::SetCursorScreenPos(cursorBeforeInput);
+
+        if (cancelled)
+        {
+            s_InlineRenameEntityID = 0;
+            return;
+        }
+
+        if (finished)
+        {
+            const std::string newName = s_InlineRenameBuffer;
+            if (!newName.empty() && newName != entity.GetName())
+            {
+                entity.SetName(newName);
+                app.MarkDirty();
+            }
+            s_InlineRenameEntityID = 0;
+        }
+    }
 
     MaraeUI::EditorIcon EntityIcon(Entity& entity)
     {
@@ -1139,10 +1210,13 @@ void HierarchyPanel::DrawEntityNode(
             : (entity.IsModel ? ImVec4(0.92f, 0.76f, 0.42f, 1.0f)
                               : ImVec4(0.67f, 0.78f, 0.91f, 1.0f)));
 
+    const bool editingName = s_InlineRenameEntityID == entity.GetID();
     bool opened = ImGui::TreeNodeEx(
         (void*)(uintptr_t)entity.GetID(),
         flags,
-        entity.SelectionLocked ? "   %s  [Bloqueado]" : "   %s",
+        editingName
+            ? (entity.SelectionLocked ? "   [Bloqueado]" : "   ")
+            : (entity.SelectionLocked ? "   %s  [Bloqueado]" : "   %s"),
         entity.GetName().c_str()
     );
 
@@ -1247,30 +1321,8 @@ void HierarchyPanel::DrawEntityNode(
         s_MultiDragStarted = false;
     }
 
-    // Duplo clique na entidade abre o script se tiver (alternativa que funciona no ImGui)
-    static float lastEntityClickTime = 0.0f;
-    static uint64_t lastClickedEntityID = 0;
-    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0))
-    {
-        const float currentTime = static_cast<float>(ImGui::GetTime());
-        if (entity.GetID() == lastClickedEntityID && (currentTime - lastEntityClickTime) < 0.3f)
-        {
-            // Duplo clique detectado
-            const ScriptComponent& script = entity.GetScriptComponent();
-            if (!script.ScriptPath.empty())
-            {
-                app.OpenScriptInInternalEditor(script.ScriptPath);
-                std::cout << "Abrindo script no editor: " << script.ScriptPath << std::endl;
-            }
-            lastEntityClickTime = 0.0f; // Reset para evitar triplo clique
-            lastClickedEntityID = 0;
-        }
-        else
-        {
-            lastEntityClickTime = currentTime;
-            lastClickedEntityID = entity.GetID();
-        }
-    }
+    if (IsHierarchyNameDoubleClicked(entity, rowMin, rowMax))
+        BeginHierarchyInlineRename(entity);
 
     DrawHierarchyEntityContextMenu(app, entity, entityIndex);
     DrawAddComponentPopup(app, entity);
@@ -1362,6 +1414,8 @@ void HierarchyPanel::DrawEntityNode(
 
         ImGui::EndDragDropTarget();
     }
+
+    DrawHierarchyInlineRename(app, entity, rowMin, rowMax);
 
     if (opened)
     {
@@ -2102,11 +2156,16 @@ void HierarchyPanel::Draw(
                 selected ? ImVec4(0.08f, 0.38f, 0.68f, 1.0f) : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
             ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.18f, 0.31f, 0.43f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.10f, 0.46f, 0.78f, 1.0f));
+            const bool editingName = s_InlineRenameEntityID == entity.GetID();
             ImGui::TreeNodeEx((void*)(uintptr_t)entity.GetID(), flags,
-                entity.SelectionLocked ? "   %s  [Bloqueado]" : "   %s",
+                editingName
+                    ? (entity.SelectionLocked ? "   [Bloqueado]" : "   ")
+                    : (entity.SelectionLocked ? "   %s  [Bloqueado]" : "   %s"),
                 entity.GetName().c_str());
             const ImVec2 rowMin = ImGui::GetItemRectMin();
             const ImVec2 rowMax = ImGui::GetItemRectMax();
+            if (IsHierarchyNameDoubleClicked(entity, rowMin, rowMax))
+                BeginHierarchyInlineRename(entity);
             s_HierarchySelectionRows.push_back({
                 static_cast<int>(i),
                 ImVec2(ImGui::GetWindowPos().x + ImGui::GetStyle().WindowPadding.x, rowMin.y),
@@ -2167,6 +2226,8 @@ void HierarchyPanel::Draw(
                     ImGui::TextDisabled(UI("↳ %s"), parent->GetName().c_str());
                 }
             }
+
+            DrawHierarchyInlineRename(app, entity, rowMin, rowMax);
         }
     }
     else
