@@ -93,6 +93,29 @@ void* g_CurrentApplication = nullptr;
 
 static void ApplyGraphicsPresetToLighting(LightingSettings& settings, GraphicsQuality quality);
 
+static std::string GetOpenGLRendererName()
+{
+    const GLubyte* value = glGetString(GL_RENDERER);
+    return value ? reinterpret_cast<const char*>(value) : std::string{};
+}
+
+static bool IsLegacyIntelIntegratedGPU(const std::string& renderer)
+{
+    std::string normalized = renderer;
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    // Intel Arc is a separate GPU generation. Keep the guard limited to the
+    // legacy HD/UHD adapters that are known to be fragile with large GL passes.
+    if (normalized.find("arc") != std::string::npos)
+        return false;
+
+    return normalized.find("intel(r) uhd") != std::string::npos ||
+           normalized.find("intel uhd") != std::string::npos ||
+           normalized.find("intel(r) hd graphics") != std::string::npos ||
+           normalized.find("intel hd graphics") != std::string::npos;
+}
+
 static std::filesystem::path ResolveProjectFilePath(
     const ProjectConfig& project,
     const std::string& path)
@@ -1394,6 +1417,43 @@ Application::Application(const ProjectConfig& config)
     }
     if (!m_ProjectConfig.RuntimeGame)
         LoadEditorSettings();
+
+    // Avoid a driver reset on legacy Intel integrated GPUs when a project
+    // requests Ultra lighting (4K cascades, 2K local maps and multiple shadow
+    // lights). Apply a safe profile before the first real scene frame. The
+    // preset is visible in the editor and persists with the project's settings.
+    const std::string rendererName = GetOpenGLRendererName();
+    if (!m_ProjectConfig.RuntimeGame &&
+        m_ProjectConfig.WorldType == ProjectWorldType::World3D &&
+        IsLegacyIntelIntegratedGPU(rendererName) &&
+        m_GraphicsQuality != GraphicsQuality::UltraPerformance &&
+        (m_GraphicsQuality == GraphicsQuality::Ultra ||
+         m_GraphicsQuality == GraphicsQuality::HighFidelity ||
+         m_Scene.GetLightingManager().Settings.ShadowMapResolution > 2048 ||
+         m_Scene.GetLightingManager().Settings.PointShadowMapResolution > 1024 ||
+         m_Scene.GetLightingManager().Settings.MaxShadowedLocalLights > 2))
+    {
+        const GraphicsQuality requestedQuality = m_GraphicsQuality;
+        SetGraphicsQuality(GraphicsQuality::UltraPerformance);
+        for (Entity& entity : m_Scene.GetEntities())
+        {
+            if (!entity.IsGlobalLight())
+                continue;
+
+            GlobalLightingSettings& post = entity.GetGlobalLightComponent().Lighting;
+            post.ScreenSpaceAOEnabled = false;
+            post.ScreenSpaceReflectionsEnabled = false;
+            post.VolumetricCloudsEnabled = false;
+            post.TemporalAAEnabled = false;
+            post.GodRaysEnabled = false;
+        }
+
+        std::cout << "[GraphicsSafety] Intel integrada detectada (" << rendererName
+                  << "). Perfil " << static_cast<int>(requestedQuality)
+                  << " reduzido para Ultra Performance antes do primeiro quadro;"
+                     " sombras dinamicas e efeitos de tela pesados foram desativados"
+                     " para evitar reinicio do driver.\n";
+    }
 
     m_SceneDirty = false;
     UpdateWindowTitle();
@@ -3351,6 +3411,7 @@ void Application::UpdateUIInteraction()
 void Application::Run()
 {
     auto nextBackgroundFrame = std::chrono::steady_clock::now();
+    bool firstFrame = true;
     while (!m_Window.ShouldClose())
     {
         GLFWwindow* nativeWindow = m_Window.GetNativeWindow();
@@ -3393,7 +3454,14 @@ void Application::Run()
             lastSceneUp = now;
         }
 
+        if (firstFrame)
+            std::cout << "[Startup] Primeiro quadro do editor: iniciando atualizacao e renderizacao.\n";
         OnUpdate();
+        if (firstFrame)
+        {
+            std::cout << "[Startup] Primeiro quadro do editor apresentado.\n";
+            firstFrame = false;
+        }
         // update animation system
         {
             double now = glfwGetTime();
