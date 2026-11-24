@@ -58,6 +58,11 @@ void EditorSettingsPanel::Draw(Application& app)
         if (ImGui::Combo(L("settings.graphics"), &qualityIndex, qualityNames, 5))
             app.SetGraphicsQuality(qualityValues[std::clamp(qualityIndex, 0, 4)]);
         ImGui::TextWrapped(UI("%s"), L("settings.quality_hint"));
+        if (app.IsGraphicsSafetyFallbackActive())
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.72f, 0.25f, 1.0f), "%s",
+                L("settings.graphics_safety_fallback"));
+        }
         ImGui::Checkbox(L("settings.show_grid"), &app.GetShowGrid());
         ImGui::Checkbox(L("settings.show_axis"), &app.GetShowAxis());
         ImGui::SliderFloat(L("settings.grid_dist"), &app.GetGridRenderDistance(), 500.0f, 10000.0f, "%.0f m");

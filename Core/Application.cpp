@@ -1435,12 +1435,12 @@ Application::Application(const ProjectConfig& config)
     {
         const GraphicsQuality requestedQuality = m_GraphicsQuality;
         m_GraphicsSafetyFallbackActive = true;
-        m_Renderer.SetQuality(GraphicsQuality::UltraPerformance);
+        m_Renderer.SetQuality(GraphicsQuality::Performance);
         ApplyGraphicsPresetToLighting(
             m_Scene.GetLightingManager().Settings,
-            GraphicsQuality::UltraPerformance);
-        m_ShadowIntensity = 0.0f;
-        m_AmbientLight = 0.65f;
+            GraphicsQuality::Performance);
+        m_ShadowIntensity = 0.5f;
+        m_AmbientLight = 0.5f;
         for (Entity& entity : m_Scene.GetEntities())
         {
             if (!entity.IsGlobalLight())
@@ -1455,10 +1455,10 @@ Application::Application(const ProjectConfig& config)
         }
 
         std::cout << "[GraphicsSafety] Intel integrada detectada (" << rendererName
-                  << "). Perfil de renderizacao temporario reduzido para Ultra Performance;"
+                  << "). Perfil de renderizacao temporario reduzido para Performance;"
                      " a preferencia salva do projeto continua em "
                   << static_cast<int>(requestedQuality)
-                  << ". Sombras e efeitos pesados foram limitados para proteger o driver.\n";
+                  << ". Sombras basicas permanecem ativas; efeitos pesados foram limitados.\n";
     }
 
     m_SceneDirty = false;
@@ -11525,12 +11525,12 @@ void Application::SetGraphicsQuality(GraphicsQuality quality)
 
     if (m_GraphicsSafetyFallbackActive)
     {
-        m_Renderer.SetQuality(GraphicsQuality::UltraPerformance);
+        m_Renderer.SetQuality(GraphicsQuality::Performance);
         ApplyGraphicsPresetToLighting(
             m_Scene.GetLightingManager().Settings,
-            GraphicsQuality::UltraPerformance);
-        m_ShadowIntensity = 0.0f;
-        m_AmbientLight = 0.65f;
+            GraphicsQuality::Performance);
+        m_ShadowIntensity = 0.5f;
+        m_AmbientLight = 0.5f;
         return;
     }
 

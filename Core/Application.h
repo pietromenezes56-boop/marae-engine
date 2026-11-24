@@ -173,6 +173,7 @@ public:
     float& GetShadowIntensity();
     float& GetAmbientLight();
     GraphicsQuality GetGraphicsQuality() const { return m_GraphicsQuality; }
+    bool IsGraphicsSafetyFallbackActive() const { return m_GraphicsSafetyFallbackActive; }
     void SetGraphicsQuality(GraphicsQuality quality);
     void ToggleSettings();
     void SetShowTimeline(bool show);
@@ -433,6 +434,8 @@ private:
     float m_ShadowIntensity = 0.5f;
     float m_AmbientLight = 0.35f;
     GraphicsQuality m_GraphicsQuality = GraphicsQuality::Balanced;
+    // Preserve the selected preset when a temporary GPU safety profile is used.
+    bool m_GraphicsSafetyFallbackActive = false;
     // Preserve the selected preset when a temporary GPU safety profile is used.
     bool m_GraphicsSafetyFallbackActive = false;
     bool m_ShowGridBeforePlay = true;
