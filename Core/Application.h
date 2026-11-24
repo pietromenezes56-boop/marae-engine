@@ -433,6 +433,8 @@ private:
     float m_ShadowIntensity = 0.5f;
     float m_AmbientLight = 0.35f;
     GraphicsQuality m_GraphicsQuality = GraphicsQuality::Balanced;
+    // Preserve the selected preset when a temporary GPU safety profile is used.
+    bool m_GraphicsSafetyFallbackActive = false;
     bool m_ShowGridBeforePlay = true;
     bool m_ShowAxisBeforePlay = true;
     bool m_PlayEditorVisualsSnapshotValid = false;

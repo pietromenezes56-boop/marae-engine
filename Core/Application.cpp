@@ -1420,8 +1420,8 @@ Application::Application(const ProjectConfig& config)
 
     // Avoid a driver reset on legacy Intel integrated GPUs when a project
     // requests Ultra lighting (4K cascades, 2K local maps and multiple shadow
-    // lights). Apply a safe profile before the first real scene frame. The
-    // preset is visible in the editor and persists with the project's settings.
+    // lights). Use a safe runtime profile without overwriting the user's
+    // requested preset in the project settings.
     const std::string rendererName = GetOpenGLRendererName();
     if (!m_ProjectConfig.RuntimeGame &&
         m_ProjectConfig.WorldType == ProjectWorldType::World3D &&
@@ -1434,7 +1434,13 @@ Application::Application(const ProjectConfig& config)
          m_Scene.GetLightingManager().Settings.MaxShadowedLocalLights > 2))
     {
         const GraphicsQuality requestedQuality = m_GraphicsQuality;
-        SetGraphicsQuality(GraphicsQuality::UltraPerformance);
+        m_GraphicsSafetyFallbackActive = true;
+        m_Renderer.SetQuality(GraphicsQuality::UltraPerformance);
+        ApplyGraphicsPresetToLighting(
+            m_Scene.GetLightingManager().Settings,
+            GraphicsQuality::UltraPerformance);
+        m_ShadowIntensity = 0.0f;
+        m_AmbientLight = 0.65f;
         for (Entity& entity : m_Scene.GetEntities())
         {
             if (!entity.IsGlobalLight())
@@ -1449,10 +1455,10 @@ Application::Application(const ProjectConfig& config)
         }
 
         std::cout << "[GraphicsSafety] Intel integrada detectada (" << rendererName
-                  << "). Perfil " << static_cast<int>(requestedQuality)
-                  << " reduzido para Ultra Performance antes do primeiro quadro;"
-                     " sombras dinamicas e efeitos de tela pesados foram desativados"
-                     " para evitar reinicio do driver.\n";
+                  << "). Perfil de renderizacao temporario reduzido para Ultra Performance;"
+                     " a preferencia salva do projeto continua em "
+                  << static_cast<int>(requestedQuality)
+                  << ". Sombras e efeitos pesados foram limitados para proteger o driver.\n";
     }
 
     m_SceneDirty = false;
@@ -1968,30 +1974,33 @@ void Application::SaveEditorSettings()
         file << "FaceAlignTolerance=" << m_SnapSettings.FaceAlignTolerance << "\n";
         file << "VertexSnapThreshold=" << m_SnapSettings.VertexSnapThreshold << "\n";
         file << "EdgeSnapThreshold=" << m_SnapSettings.EdgeSnapThreshold << "\n";
-        file << "ShadowIntensity=" << m_ShadowIntensity << "\n";
-        file << "AmbientLight=" << m_AmbientLight << "\n";
-        file << "LightingEnabled=" << lightingSettings.Enabled << "\n";
-        file << "DynamicShadows=" << lightingSettings.DynamicShadows << "\n";
-        file << "ContactShadows=" << lightingSettings.ContactShadows << "\n";
-        file << "IndirectLighting=" << lightingSettings.IndirectLighting << "\n";
-        file << "EnvironmentLighting=" << lightingSettings.EnvironmentLighting << "\n";
-        file << "LightingQuality=" << static_cast<int>(lightingSettings.Quality) << "\n";
-        file << "MaxPointLights=" << lightingSettings.MaxPointLights << "\n";
-        file << "MaxSpotLights=" << lightingSettings.MaxSpotLights << "\n";
-        file << "MaxShadowedLocalLights=" << lightingSettings.MaxShadowedLocalLights << "\n";
-        file << "IndirectIntensity=" << lightingSettings.IndirectIntensity << "\n";
-        file << "ContactShadowStrength=" << lightingSettings.ContactShadowStrength << "\n";
-        file << "ContactShadowDistance=" << lightingSettings.ContactShadowDistance << "\n";
-        file << "ShadowDistance=" << lightingSettings.ShadowDistance << "\n";
-        file << "ShadowMapResolution=" << lightingSettings.ShadowMapResolution << "\n";
-        file << "PointShadowMapResolution=" << lightingSettings.PointShadowMapResolution << "\n";
-        file << "DayNightCycleEnabled=" << lightingSettings.DayNightCycleEnabled << "\n";
-        file << "DirectionalDistanceSoftening=" << lightingSettings.DirectionalDistanceSoftening << "\n";
-        file << "DayTimeHours=" << lightingSettings.DayTimeHours << "\n";
-        file << "DayNightCycleSpeed=" << lightingSettings.DayNightCycleSpeedHoursPerSecond << "\n";
-        file << "SunAzimuthDegrees=" << lightingSettings.SunAzimuthDegrees << "\n";
-        file << "DirectionalSourceAngularDiameterDegrees=" << lightingSettings.DirectionalSourceAngularDiameterDegrees << "\n";
-        file << "SunIntensityScale=" << lightingSettings.SunIntensityScale << "\n";
+        if (!m_GraphicsSafetyFallbackActive)
+        {
+            file << "ShadowIntensity=" << m_ShadowIntensity << "\n";
+            file << "AmbientLight=" << m_AmbientLight << "\n";
+            file << "LightingEnabled=" << lightingSettings.Enabled << "\n";
+            file << "DynamicShadows=" << lightingSettings.DynamicShadows << "\n";
+            file << "ContactShadows=" << lightingSettings.ContactShadows << "\n";
+            file << "IndirectLighting=" << lightingSettings.IndirectLighting << "\n";
+            file << "EnvironmentLighting=" << lightingSettings.EnvironmentLighting << "\n";
+            file << "LightingQuality=" << static_cast<int>(lightingSettings.Quality) << "\n";
+            file << "MaxPointLights=" << lightingSettings.MaxPointLights << "\n";
+            file << "MaxSpotLights=" << lightingSettings.MaxSpotLights << "\n";
+            file << "MaxShadowedLocalLights=" << lightingSettings.MaxShadowedLocalLights << "\n";
+            file << "IndirectIntensity=" << lightingSettings.IndirectIntensity << "\n";
+            file << "ContactShadowStrength=" << lightingSettings.ContactShadowStrength << "\n";
+            file << "ContactShadowDistance=" << lightingSettings.ContactShadowDistance << "\n";
+            file << "ShadowDistance=" << lightingSettings.ShadowDistance << "\n";
+            file << "ShadowMapResolution=" << lightingSettings.ShadowMapResolution << "\n";
+            file << "PointShadowMapResolution=" << lightingSettings.PointShadowMapResolution << "\n";
+            file << "DayNightCycleEnabled=" << lightingSettings.DayNightCycleEnabled << "\n";
+            file << "DirectionalDistanceSoftening=" << lightingSettings.DirectionalDistanceSoftening << "\n";
+            file << "DayTimeHours=" << lightingSettings.DayTimeHours << "\n";
+            file << "DayNightCycleSpeed=" << lightingSettings.DayNightCycleSpeedHoursPerSecond << "\n";
+            file << "SunAzimuthDegrees=" << lightingSettings.SunAzimuthDegrees << "\n";
+            file << "DirectionalSourceAngularDiameterDegrees=" << lightingSettings.DirectionalSourceAngularDiameterDegrees << "\n";
+            file << "SunIntensityScale=" << lightingSettings.SunIntensityScale << "\n";
+        }
         file << "AudioMasterVolume=" << m_AudioSystem.GetMasterVolume() << "\n";
         file << "AudioMusicVolume=" << (AudioMixer::Get().GetGroup(MixerGroupID::Music) ? AudioMixer::Get().GetGroup(MixerGroupID::Music)->GetVolume() : 1.f) << "\n";
         file << "AudioSFXVolume="   << (AudioMixer::Get().GetGroup(MixerGroupID::SFX)   ? AudioMixer::Get().GetGroup(MixerGroupID::SFX)->GetVolume()   : 1.f) << "\n";
@@ -11509,6 +11518,22 @@ void Application::SetGraphicsQuality(GraphicsQuality quality)
 {
     m_GraphicsQuality = quality;
     m_ProjectConfig.Quality = quality;
+    if (m_GraphicsSafetyFallbackActive &&
+        quality != GraphicsQuality::Ultra &&
+        quality != GraphicsQuality::HighFidelity)
+        m_GraphicsSafetyFallbackActive = false;
+
+    if (m_GraphicsSafetyFallbackActive)
+    {
+        m_Renderer.SetQuality(GraphicsQuality::UltraPerformance);
+        ApplyGraphicsPresetToLighting(
+            m_Scene.GetLightingManager().Settings,
+            GraphicsQuality::UltraPerformance);
+        m_ShadowIntensity = 0.0f;
+        m_AmbientLight = 0.65f;
+        return;
+    }
+
     m_Renderer.SetQuality(quality);
     ApplyGraphicsPresetToLighting(m_Scene.GetLightingManager().Settings, quality);
 
