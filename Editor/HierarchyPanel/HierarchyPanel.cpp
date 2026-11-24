@@ -62,14 +62,11 @@ namespace
     bool s_InlineRenameFocusPending = false;
     int s_HierarchyForceTreeState = -1; // -1 normal, 0 collapse, 1 expand
 
-    bool IsHierarchyNameDoubleClicked(const Entity& entity, const ImVec2& rowMin,
-                                      const ImVec2& rowMax)
+    bool IsHierarchyNameDoubleClicked(const ImVec2& rowMin, const ImVec2& rowMax)
     {
         const ImVec2 mouse = ImGui::GetIO().MousePos;
-        const float textStart = rowMin.x + 32.0f;
-        const float textEnd = textStart + ImGui::CalcTextSize(entity.GetName().c_str()).x + 8.0f;
         return ImGui::IsWindowHovered() && ImGui::IsMouseDoubleClicked(0) &&
-            mouse.x >= textStart && mouse.x <= textEnd &&
+            mouse.x >= rowMin.x && mouse.x <= rowMax.x &&
             mouse.y >= rowMin.y && mouse.y <= rowMax.y;
     }
 
@@ -1321,7 +1318,7 @@ void HierarchyPanel::DrawEntityNode(
         s_MultiDragStarted = false;
     }
 
-    if (IsHierarchyNameDoubleClicked(entity, rowMin, rowMax))
+    if (IsHierarchyNameDoubleClicked(rowMin, rowMax))
         BeginHierarchyInlineRename(entity);
 
     DrawHierarchyEntityContextMenu(app, entity, entityIndex);
@@ -2164,7 +2161,7 @@ void HierarchyPanel::Draw(
                 entity.GetName().c_str());
             const ImVec2 rowMin = ImGui::GetItemRectMin();
             const ImVec2 rowMax = ImGui::GetItemRectMax();
-            if (IsHierarchyNameDoubleClicked(entity, rowMin, rowMax))
+            if (IsHierarchyNameDoubleClicked(rowMin, rowMax))
                 BeginHierarchyInlineRename(entity);
             s_HierarchySelectionRows.push_back({
                 static_cast<int>(i),
