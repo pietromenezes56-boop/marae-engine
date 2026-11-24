@@ -93,5 +93,6 @@ private:
     std::vector<DiagEntry> m_DiagEntries;
     std::function<std::string()> m_CompileCallback;
     std::string m_CompilerOutput;
+    std::vector<char> m_CompilerOutputBuffer;
     bool m_ShowScriptGuide = false;
 };

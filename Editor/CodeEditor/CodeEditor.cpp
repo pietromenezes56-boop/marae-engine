@@ -127,6 +127,8 @@ void CodeEditor::RenderToolbar()
         if (ImGui::Button(UI("Compilar scripts C#")))
         {
             m_CompilerOutput = m_CompileCallback();
+            m_CompilerOutputBuffer.assign(m_CompilerOutput.begin(), m_CompilerOutput.end());
+            m_CompilerOutputBuffer.push_back('\0');
             RunDiagnostics();
         }
         if (ImGui::IsItemHovered())
@@ -229,7 +231,21 @@ void CodeEditor::RenderDiagnosticsPanel()
     if (!m_CompilerOutput.empty())
     {
         const bool failed = m_CompilerOutput.rfind("ERROS DE COMPILAÇÃO:", 0) == 0;
-        ImGui::TextColored(failed ? COLOR_ERROR : COLOR_INFO, "%s", m_CompilerOutput.c_str());
+        ImGui::TextDisabled(UI("Saída da compilação — selecione o texto ou copie tudo:"));
+        ImGui::SameLine();
+        if (ImGui::SmallButton(UI("Copiar saída##CompilerOutput")))
+            ImGui::SetClipboardText(m_CompilerOutput.c_str());
+        ImGui::PushStyleColor(ImGuiCol_Text, failed ? COLOR_ERROR : COLOR_INFO);
+        if (m_CompilerOutputBuffer.empty())
+        {
+            m_CompilerOutputBuffer.assign(m_CompilerOutput.begin(), m_CompilerOutput.end());
+            m_CompilerOutputBuffer.push_back('\0');
+        }
+        ImGui::InputTextMultiline("##CompilerOutputText", m_CompilerOutputBuffer.data(),
+            m_CompilerOutputBuffer.size(),
+            ImVec2(-1.0f, ImGui::GetTextLineHeightWithSpacing() * 6.0f),
+            ImGuiInputTextFlags_ReadOnly);
+        ImGui::PopStyleColor();
         ImGui::Separator();
     }
     if (m_DiagEntries.empty())
