@@ -9,7 +9,7 @@
 // ---------------------------------------------------------------------------
 enum class GraphicsQuality
 {
-    Performance = 0,   // sem sombras/nuvens, mapa de sombras mínimo
+    Performance = 0,   // sombras básicas, sem nuvens
     Balanced    = 1,   // sombras 2K e nuvens médias (default)
     HighFidelity = 2,  // valor mantido para compatibilidade com projetos antigos
     UltraPerformance = 3,

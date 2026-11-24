@@ -1311,8 +1311,8 @@ Application::Application(const ProjectConfig& config)
             m_AmbientLight    = 0.5f;
             break;
         case GraphicsQuality::UltraPerformance:
-            m_ShadowIntensity = 0.0f;
-            m_AmbientLight = 0.65f;
+            m_ShadowIntensity = 0.35f;
+            m_AmbientLight = 0.35f;
             break;
         case GraphicsQuality::Balanced:
             m_ShadowIntensity = 0.5f;
@@ -1897,7 +1897,7 @@ void Application::LoadEditorSettings()
                 case GraphicsQuality::Performance: m_ShadowIntensity = 0.5f; break;
                 case GraphicsQuality::Balanced:    m_ShadowIntensity = 0.5f; break;
                 case GraphicsQuality::HighFidelity: m_ShadowIntensity = 0.85f; break;
-                case GraphicsQuality::UltraPerformance: m_ShadowIntensity = 0.0f; break;
+                case GraphicsQuality::UltraPerformance: m_ShadowIntensity = 0.35f; break;
                 case GraphicsQuality::Ultra: m_ShadowIntensity = 1.0f; break;
                 }
             }
@@ -1909,6 +1909,16 @@ void Application::LoadEditorSettings()
                 // de Performance para Balanced/Ultra.
                 m_ShadowIntensity = m_GraphicsQuality == GraphicsQuality::Ultra ? 1.0f :
                     (m_GraphicsQuality == GraphicsQuality::HighFidelity ? 0.85f : 0.5f);
+            }
+
+            // Migrate values saved by the old Ultra Performance preset, which
+            // disabled all shadows and used excessive ambient light.
+            if (m_GraphicsQuality == GraphicsQuality::UltraPerformance)
+            {
+                if (m_ShadowIntensity <= 0.001f)
+                    m_ShadowIntensity = 0.35f;
+                if (std::abs(m_AmbientLight - 0.65f) < 0.02f)
+                    m_AmbientLight = 0.35f;
             }
         }
     }
@@ -11458,14 +11468,14 @@ static void ApplyGraphicsPresetToLighting(LightingSettings& settings, GraphicsQu
         settings.Quality = LightingQuality::Performance;
         settings.ShadowMapResolution = 512;
         settings.PointShadowMapResolution = 256;
-        settings.MaxShadowedLocalLights = 0;
+        settings.MaxShadowedLocalLights = 1;
         settings.MaxPointLights = 4;
         settings.MaxSpotLights = 4;
-        settings.ShadowDistance = 80.0f;
-        settings.DynamicShadows = false;
+        settings.ShadowDistance = 120.0f;
+        settings.DynamicShadows = true;
         settings.ContactShadows = false;
         settings.IndirectLighting = false;
-        settings.EnvironmentLighting = false;
+        settings.EnvironmentLighting = true;
         break;
     case GraphicsQuality::Balanced:
         settings.Enabled = true;
@@ -11544,8 +11554,8 @@ void Application::SetGraphicsQuality(GraphicsQuality quality)
             m_AmbientLight = 0.5f;
             break;
         case GraphicsQuality::UltraPerformance:
-            m_ShadowIntensity = 0.0f;
-            m_AmbientLight = 0.65f;
+            m_ShadowIntensity = 0.35f;
+            m_AmbientLight = 0.35f;
             break;
         case GraphicsQuality::Balanced:
             m_ShadowIntensity = 0.5f;

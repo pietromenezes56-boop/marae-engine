@@ -559,9 +559,9 @@ void SceneRenderer::SetQuality(GraphicsQuality quality)
             m_ActiveCascadeCount = 1;
             break;
         case GraphicsQuality::UltraPerformance:
-            // Preset de compatibilidade máxima: sem sombras dinâmicas, nuvens
-            // nem sombras locais; cena continua usando iluminação direta simples.
-            m_UseShadows = false;
+            // Sombras básicas continuam ativas em baixa resolução; nuvens e
+            // efeitos de pós-processamento ficam desligados para poupar GPU.
+            m_UseShadows = true;
             m_RequestedShadowMapSize = 512;
             m_RequestedPointShadowMapSize = 256;
             m_ActiveCascadeCount = 1;
@@ -927,15 +927,15 @@ void SceneRenderer::Render(
     if (m_Quality == GraphicsQuality::UltraPerformance)
     {
         // A cena mantém os valores autorais, mas o renderer aplica limites
-        // temporários para que seus dados salvos não elevem o custo do perfil.
-        lightingSettings.DynamicShadows = false;
+        // temporários. Uma cascata e uma luz local preservam sombras básicas.
+        lightingSettings.DynamicShadows = true;
         lightingSettings.ContactShadows = false;
         lightingSettings.IndirectLighting = false;
-        lightingSettings.EnvironmentLighting = false;
+        lightingSettings.EnvironmentLighting = true;
         lightingSettings.MaxPointLights = std::min(lightingSettings.MaxPointLights, 4);
         lightingSettings.MaxSpotLights = std::min(lightingSettings.MaxSpotLights, 4);
-        lightingSettings.MaxShadowedLocalLights = 0;
-        lightingSettings.ShadowDistance = std::min(lightingSettings.ShadowDistance, 80.0f);
+        lightingSettings.MaxShadowedLocalLights = 1;
+        lightingSettings.ShadowDistance = std::min(lightingSettings.ShadowDistance, 120.0f);
         lightingSettings.ShadowMapResolution = std::min(lightingSettings.ShadowMapResolution, 512);
         lightingSettings.PointShadowMapResolution = std::min(lightingSettings.PointShadowMapResolution, 256);
     }
