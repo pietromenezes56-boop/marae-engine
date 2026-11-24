@@ -2117,18 +2117,16 @@ void InspectorPanel::DrawScriptInspector(
     }
     else
     {
-        ImGui::Text(UI("%s: %s"), L("inspector.script_label"), script.ScriptPath.c_str());
-        if (ImGui::Button(L("component.open_vscode")))
-        {
-            app.OpenSelectedScriptInVSCode();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button(L("inspector.internal_editor")))
+        ImGui::TextWrapped(UI("%s: %s"), L("inspector.script_label"), script.ScriptPath.c_str());
+        if (ImGui::Button(L("inspector.internal_editor"), ImVec2(-1.0f, 0.0f)))
         {
             app.OpenScriptInInternalEditor(script.ScriptPath);
         }
-        ImGui::SameLine();
-        if (ImGui::Button(L("common.remove")))
+        if (ImGui::Button(L("component.open_vscode"), ImVec2(-1.0f, 0.0f)))
+        {
+            app.OpenSelectedScriptInVSCode();
+        }
+        if (ImGui::Button(L("common.remove"), ImVec2(-1.0f, 0.0f)))
         {
             script.ScriptPath.clear();
             script.ScriptAssemblyQualifiedTypeName.clear();
@@ -3309,6 +3307,14 @@ void InspectorPanel::Draw(Application& app)
             if (parentEntity)
             {
                 ImGui::TextUnformatted(L("inspector.component"));
+                ImGui::Separator();
+                char ownerName[256]{};
+                strcpy_s(ownerName, parentEntity->GetName().c_str());
+                if (ImGui::InputText(UI("Nome"), ownerName, sizeof(ownerName)))
+                {
+                    parentEntity->SetName(ownerName);
+                    app.MarkDirty();
+                }
                 ImGui::Separator();
                 DrawComponentInspector(app, *parentEntity, selectedID);
             }
