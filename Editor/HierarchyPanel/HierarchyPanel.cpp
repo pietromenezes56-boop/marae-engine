@@ -60,14 +60,12 @@ namespace
     uint64_t s_InlineRenameEntityID = 0;
     char s_InlineRenameBuffer[256]{};
     bool s_InlineRenameFocusPending = false;
+    int s_InlineRenameStartedFrame = -1;
     int s_HierarchyForceTreeState = -1; // -1 normal, 0 collapse, 1 expand
 
-    bool IsHierarchyNameDoubleClicked(const ImVec2& rowMin, const ImVec2& rowMax)
+    bool IsHierarchyNameDoubleClicked()
     {
-        const ImVec2 mouse = ImGui::GetIO().MousePos;
-        return ImGui::IsWindowHovered() && ImGui::IsMouseDoubleClicked(0) &&
-            mouse.x >= rowMin.x && mouse.x <= rowMax.x &&
-            mouse.y >= rowMin.y && mouse.y <= rowMax.y;
+        return ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0);
     }
 
     void BeginHierarchyInlineRename(const Entity& entity)
@@ -76,12 +74,17 @@ namespace
         std::snprintf(s_InlineRenameBuffer, sizeof(s_InlineRenameBuffer), "%s",
             entity.GetName().c_str());
         s_InlineRenameFocusPending = true;
+        s_InlineRenameStartedFrame = ImGui::GetFrameCount();
     }
 
     void DrawHierarchyInlineRename(Application& app, Entity& entity,
                                     const ImVec2& rowMin, const ImVec2& rowMax)
     {
         if (s_InlineRenameEntityID != entity.GetID())
+            return;
+        // Render the editor on the next frame so the double-click that opened
+        // it cannot immediately deactivate the new InputText item.
+        if (ImGui::GetFrameCount() <= s_InlineRenameStartedFrame)
             return;
 
         const float inputX = rowMin.x + 32.0f;
@@ -104,13 +107,15 @@ namespace
             s_InlineRenameBuffer, sizeof(s_InlineRenameBuffer),
             ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
         const bool cancelled = ImGui::IsItemActive() && ImGui::IsKeyPressed(ImGuiKey_Escape);
-        const bool finished = submitted || ImGui::IsItemDeactivated();
+        const bool finished = ImGui::GetFrameCount() > s_InlineRenameStartedFrame + 1 &&
+            (submitted || ImGui::IsItemDeactivated());
         ImGui::PopID();
         ImGui::SetCursorScreenPos(cursorBeforeInput);
 
         if (cancelled)
         {
             s_InlineRenameEntityID = 0;
+            s_InlineRenameStartedFrame = -1;
             return;
         }
 
@@ -123,6 +128,7 @@ namespace
                 app.MarkDirty();
             }
             s_InlineRenameEntityID = 0;
+            s_InlineRenameStartedFrame = -1;
         }
     }
 
@@ -1219,6 +1225,7 @@ void HierarchyPanel::DrawEntityNode(
 
     const ImVec2 rowMin = ImGui::GetItemRectMin();
     const ImVec2 rowMax = ImGui::GetItemRectMax();
+    const bool renameDoubleClicked = IsHierarchyNameDoubleClicked();
     if (entityIndex >= 0)
     {
         const float left = ImGui::GetWindowPos().x + ImGui::GetStyle().WindowPadding.x;
@@ -1318,7 +1325,7 @@ void HierarchyPanel::DrawEntityNode(
         s_MultiDragStarted = false;
     }
 
-    if (IsHierarchyNameDoubleClicked(rowMin, rowMax))
+    if (renameDoubleClicked)
         BeginHierarchyInlineRename(entity);
 
     DrawHierarchyEntityContextMenu(app, entity, entityIndex);
@@ -2161,7 +2168,8 @@ void HierarchyPanel::Draw(
                 entity.GetName().c_str());
             const ImVec2 rowMin = ImGui::GetItemRectMin();
             const ImVec2 rowMax = ImGui::GetItemRectMax();
-            if (IsHierarchyNameDoubleClicked(rowMin, rowMax))
+            const bool renameDoubleClicked = IsHierarchyNameDoubleClicked();
+            if (renameDoubleClicked)
                 BeginHierarchyInlineRename(entity);
             s_HierarchySelectionRows.push_back({
                 static_cast<int>(i),
