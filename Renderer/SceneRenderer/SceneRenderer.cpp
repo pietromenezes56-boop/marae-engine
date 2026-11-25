@@ -168,12 +168,14 @@ namespace
         // Inclui casters fora do recorte da câmera que ainda podem projetar
         // sombra para dentro dele. O limite vem da altura real dos casters e
         // da inclinação do raio solar: comprimento = altura / |direção vertical|.
-        // ShadowDistance limita o caminho quando o Sol está quase no horizonte.
+        // O limite global e o alcance do próprio trecho evitam que uma faixa
+        // distante reduza a precisão de profundidade da cascata próxima.
         const float casterHeight = std::max(0.0f, maxShadowCasterY - minimumReceiverY);
         const float minVerticalRay = std::sin(glm::radians(1.0f));
-        const float rayDistance = std::min(
+        const float rayDistance = std::min({
             std::max(0.0f, maxShadowDistance),
-            casterHeight / std::max(std::abs(lightDirection.y), minVerticalRay));
+            std::max(0.0f, sliceFar),
+            casterHeight / std::max(std::abs(lightDirection.y), minVerticalRay) });
         const glm::vec3 upstreamOffset = -lightDirection * rayDistance;
         frustumCenter += upstreamOffset * 0.5f;
 
@@ -1111,14 +1113,15 @@ void SceneRenderer::Render(
         if (!localShadowsEnabled)
             m_LocalShadowCacheValid = false;
     }
-    const int qualityCascadeCap[] = { 1, 2, 3, 4 };
-    const int qualityIndex = std::clamp(static_cast<int>(lightingSettings.Quality), 0, 3);
-    const int activeCascadeCount = std::clamp(
-        useShadows ? std::min(m_ActiveCascadeCount, qualityCascadeCap[qualityIndex]) : 1,
-        1,
-        Shader::MAX_SHADOW_CASCADES);
     const float shadowDistance = ShadowSystem::ResolveShadowDistance(
         lightingSettings, 220.0f);
+    const int qualityCascadeCap[] = { 1, 2, 3, 4 };
+    const int qualityIndex = std::clamp(static_cast<int>(lightingSettings.Quality), 0, 3);
+    const int requestedCascadeCount = useShadows
+        ? std::min(m_ActiveCascadeCount, qualityCascadeCap[qualityIndex])
+        : 1;
+    const int activeCascadeCount = ShadowSystem::ResolveCascadeCount(
+        shadowDistance, requestedCascadeCount);
     const std::array<float, Shader::MAX_SHADOW_CASCADES> cascadeFarPlanes =
         ShadowSystem::ResolveCascadeFarPlanes(shadowDistance, activeCascadeCount);
     std::array<float, Shader::MAX_SHADOW_CASCADES> cascadeNearPlanes{};

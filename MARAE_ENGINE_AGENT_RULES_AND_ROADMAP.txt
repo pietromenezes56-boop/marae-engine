@@ -458,6 +458,12 @@ Notas: penumbra derivada do vão oclusor-receptor, ângulo aparente da fonte
 direcional e raio das luzes locais; mantém CSM e cubemaps atuais, sem Gaussian
 Blur ou sistema redundante. Alcance de casters direcionais expande conforme altura
 real e elevação da fonte, limitado por ShadowDistance.
+Revisão [2026-11-24, 2]: o viewport confirmou que a qualidade ainda mudava
+com o alcance. A causa adicional eram quatro cascatas comprimidas em 10 m e
+cortes fixos que deixavam a faixa 90–490 m numa única cascata. A contagem agora
+se adapta ao alcance, a cascata próxima fica fixa em 10 m e as demais são
+distribuídas geometricamente; o alcance de casters também fica limitado ao
+trecho da cascata. Build Debug x64 passou; sem execução visual nesta revisão.
 
 M-047 (TESTANDO) Estabilidade temporal de sombras quando a câmera se move.
 Verificação: Build Debug x64 passou; renderer não foi iniciado conforme pedido

@@ -19,5 +19,6 @@ public:
         const LightingSettings& settings,
         unsigned int rendererResolution);
     static float ResolveShadowDistance(const LightingSettings& settings, float fallback);
+    static int ResolveCascadeCount(float shadowDistance, int requestedCascadeCount);
     static std::array<float, 4> ResolveCascadeFarPlanes(float shadowDistance, int cascadeCount);
 };

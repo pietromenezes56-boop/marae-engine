@@ -1,6 +1,7 @@
 #include "ShadowSystem.h"
 
 #include <algorithm>
+#include <cmath>
 
 bool ShadowSystem::ShouldRender(
     const LightingSettings& settings,
@@ -41,34 +42,34 @@ float ShadowSystem::ResolveShadowDistance(const LightingSettings& settings, floa
     return std::clamp(settings.ShadowDistance, 10.0f, 10000.0f);
 }
 
+int ShadowSystem::ResolveCascadeCount(float shadowDistance, int requestedCascadeCount)
+{
+    constexpr float nearCascadeLength = 10.0f;
+    shadowDistance = std::clamp(shadowDistance, 10.0f, 10000.0f);
+    requestedCascadeCount = std::clamp(requestedCascadeCount, 1, 4);
+
+    // Avoid squeezing several cascades into a few centimetres at short ranges.
+    // Add a cascade only when the covered distance can at least double from
+    // the stable near slice, which preserves useful texel density per slice.
+    const float ratio = std::max(1.0f, shadowDistance / nearCascadeLength);
+    const int distanceCascadeCount = 1 + static_cast<int>(std::floor(std::log2(ratio)));
+    return std::clamp(std::min(requestedCascadeCount, distanceCascadeCount), 1, 4);
+}
+
 std::array<float, 4> ShadowSystem::ResolveCascadeFarPlanes(float shadowDistance, int cascadeCount)
 {
     constexpr float nearDistance = 0.1f;
-    constexpr std::array<float, 3> referenceSplits = { 12.0f, 35.0f, 90.0f };
+    constexpr float nearCascadeLength = 10.0f;
 
     shadowDistance = std::clamp(shadowDistance, 10.0f, 10000.0f);
-    cascadeCount = std::clamp(cascadeCount, 1, 4);
+    cascadeCount = ResolveCascadeCount(shadowDistance, cascadeCount);
     std::array<float, 4> farPlanes{};
 
-    // Use the familiar near-field split points when available, but always
-    // make the last active cascade reach the requested maximum distance.
-    // Lower quality presets skip intermediate cuts instead of silently
-    // truncating shadows at 12/35/90 metres.
-    std::array<float, 3> activeReferenceSplits{};
-    if (cascadeCount == 4)
-    {
-        activeReferenceSplits = referenceSplits;
-    }
-    else if (cascadeCount == 3)
-    {
-        activeReferenceSplits = { 12.0f, 90.0f, 0.0f };
-    }
-    else if (cascadeCount == 2)
-    {
-        activeReferenceSplits = { 35.0f, 0.0f, 0.0f };
-    }
-
-    float previous = nearDistance;
+    // Keep the first cascade anchored near the camera and distribute the
+    // remaining range geometrically. Fixed 12/35/90 cuts left an enormous
+    // final slice (for example 90..490 m), making distant shadows visibly
+    // coarser despite an unchanged shadow-map resolution.
+    const float firstSplit = std::min(nearCascadeLength, shadowDistance);
     for (int i = 0; i < cascadeCount; ++i)
     {
         if (i == cascadeCount - 1)
@@ -76,18 +77,16 @@ std::array<float, 4> ShadowSystem::ResolveCascadeFarPlanes(float shadowDistance,
             farPlanes[static_cast<std::size_t>(i)] = shadowDistance;
             break;
         }
+        if (i == 0)
+        {
+            farPlanes[static_cast<std::size_t>(i)] = firstSplit;
+            continue;
+        }
 
-        // A distância máxima só estende a última cascata. Escalar todos os
-        // cortes pelo alcance total também aumentava o frustum das cascatas
-        // próximas, reduzindo a densidade de texels mesmo sem mudar a resolução.
-        const float split = activeReferenceSplits[static_cast<std::size_t>(i)];
-        const float remainingSplits = static_cast<float>(cascadeCount - i - 1);
-        const float minimumForThisSplit = previous + 0.05f;
-        const float maximumForThisSplit = std::max(
-            minimumForThisSplit,
-            shadowDistance - remainingSplits * 0.05f);
-        previous = std::clamp(split, minimumForThisSplit, maximumForThisSplit);
-        farPlanes[static_cast<std::size_t>(i)] = previous;
+        const float fraction = static_cast<float>(i) /
+            static_cast<float>(cascadeCount - 1);
+        farPlanes[static_cast<std::size_t>(i)] = firstSplit *
+            std::pow(shadowDistance / firstSplit, fraction);
     }
 
     for (int i = cascadeCount; i < 4; ++i)
