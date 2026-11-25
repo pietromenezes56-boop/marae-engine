@@ -38,6 +38,7 @@
 #include "../../Engine/UI/UIFontLibrary.h"
 #include "../../Engine/UI/UILayout.h"
 #include "../../Engine/Lighting/LightingManager.h"
+#include "../../Engine/Lighting/ShadowSystem.h"
 #include "../../Engine/Localization/Localization.h"
 #include "../../Engine/Scripting/ScriptingRuntime.h"
 #include "../../ThirdParty/json/json.hpp"
@@ -6002,7 +6003,7 @@ void InspectorPanel::DrawGlobalLightInspector(Application& app, Entity& entity)
     if (ImGui::CollapsingHeader(UI("Iluminação avançada"), ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::TextWrapped(UI("Opções avançadas de luz e sombra pertencem à cena e são controladas pelo Global Lighting."));
-        ImGui::TextDisabled(UI("O perfil Ultra usa o máximo do renderer OpenGL atual. Ray tracing real e reflexos por hardware ainda não são suportados; não serão simulados como se fossem recursos ativos."));
+        ImGui::TextDisabled(UI("Qualidade da iluminação e perfil gráfico do projeto são controles diferentes. O perfil gráfico pode limitar cascatas e resolução efetivas. Ray tracing real e reflexos por hardware ainda não são suportados."));
         if (ImGui::Checkbox(UI("Ativar sistema de iluminação avançado"), &lighting.Settings.Enabled)) app.MarkDirty();
         if (lighting.Settings.Enabled)
         {
@@ -6012,6 +6013,41 @@ void InspectorPanel::DrawGlobalLightInspector(Application& app, Entity& entity)
             {
                 lighting.Settings.Quality = static_cast<LightingQuality>(std::clamp(quality, 0, 3));
                 app.MarkDirty();
+            }
+            const auto& shadowRenderer = app.GetRenderer().GetSceneRenderer();
+            const int rendererCascadeBudget = std::clamp(
+                shadowRenderer.GetActiveCascadeCount(), 1, Shader::MAX_SHADOW_CASCADES);
+            const int lightingCascadeCaps[] = { 1, 2, 3, 4 };
+            const int lightingQualityIndex = std::clamp(
+                static_cast<int>(lighting.Settings.Quality), 0, 3);
+            const int requestedCascadeCount = std::min(
+                rendererCascadeBudget, lightingCascadeCaps[lightingQualityIndex]);
+            const bool ultraPerformanceProfile =
+                app.GetGraphicsQuality() == GraphicsQuality::UltraPerformance;
+            const float effectiveShadowDistance = ultraPerformanceProfile
+                ? std::min(lighting.Settings.ShadowDistance, 120.0f)
+                : lighting.Settings.ShadowDistance;
+            const bool effectiveShadowsEnabled = shadowRenderer.AreShadowsEnabled() &&
+                (lighting.Settings.DynamicShadows || ultraPerformanceProfile);
+            const int effectiveCascadeCount = effectiveShadowsEnabled
+                ? ShadowSystem::ResolveCascadeCount(
+                    effectiveShadowDistance, requestedCascadeCount)
+                : 0;
+            const char* graphicsProfileNames[] = {
+                "Performance", "Balanced", "High fidelity", "Ultra performance", "Ultra" };
+            const int graphicsProfileIndex = std::clamp(
+                static_cast<int>(app.GetGraphicsQuality()), 0, 4);
+            const char* effectiveProfileName = app.IsGraphicsSafetyFallbackActive()
+                ? UI("Performance (fallback de segurança)")
+                : UI(graphicsProfileNames[graphicsProfileIndex]);
+            ImGui::TextDisabled(UI("Perfil gráfico efetivo: %s"), effectiveProfileName);
+            ImGui::TextDisabled(UI("Cascatas efetivas: %d/%d | Shadow map alocado: %u px"),
+                effectiveCascadeCount, Shader::MAX_SHADOW_CASCADES,
+                shadowRenderer.GetShadowMapSize());
+            if (rendererCascadeBudget < lightingCascadeCaps[lightingQualityIndex] ||
+                ultraPerformanceProfile || app.IsGraphicsSafetyFallbackActive())
+            {
+                ImGui::TextWrapped(UI("O perfil gráfico limita o orçamento real das sombras. A qualidade Ultra desta seção não remove esse limite."));
             }
             if (ImGui::Checkbox(UI("Sombras dinâmicas"), &lighting.Settings.DynamicShadows)) app.MarkDirty();
             if (ImGui::Checkbox(UI("Contact shadows (PCF local)"), &lighting.Settings.ContactShadows)) app.MarkDirty();
