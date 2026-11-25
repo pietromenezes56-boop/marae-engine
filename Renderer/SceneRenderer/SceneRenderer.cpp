@@ -177,13 +177,23 @@ namespace
         const glm::vec3 upstreamOffset = -lightDirection * rayDistance;
         frustumCenter += upstreamOffset * 0.5f;
 
-        // A square footprint avoids resolution changes when the camera rotates.
+        // A directional light's upstream offset changes depth, not the XY
+        // footprint. Measure the square in light space so extending caster
+        // reach does not waste shadow texels on distance along the light ray.
+        const glm::mat4 lightOrientation = glm::lookAt(
+            glm::vec3(0.0f), lightDirection, lightUpReference);
         float halfExtent = 0.0f;
+        const auto includeFootprintPoint = [&](const glm::vec3& point)
+        {
+            const glm::vec3 lightSpace = glm::vec3(
+                lightOrientation * glm::vec4(point - frustumCenter, 0.0f));
+            halfExtent = std::max(halfExtent, std::abs(lightSpace.x));
+            halfExtent = std::max(halfExtent, std::abs(lightSpace.y));
+        };
         for (const glm::vec3& corner : frustumCorners)
         {
-            halfExtent = std::max(halfExtent, glm::length(corner - frustumCenter));
-            halfExtent = std::max(
-                halfExtent, glm::length(corner + upstreamOffset - frustumCenter));
+            includeFootprintPoint(corner);
+            includeFootprintPoint(corner + upstreamOffset);
         }
         halfExtent += kShadowPadding;
 
@@ -192,8 +202,6 @@ namespace
         // A orientação da luz precisa ficar independente da posição do
         // frustum. Aplicar o snap numa view já centralizada transforma o XY
         // do centro em zero e deixa a matriz seguir continuamente a câmera.
-        const glm::mat4 lightOrientation = glm::lookAt(
-            glm::vec3(0.0f), lightDirection, lightUpReference);
         const float worldUnitsPerTexel = (halfExtent * 2.0f) /
             static_cast<float>(std::max(1u, shadowMapSize));
         glm::vec4 centerInLightSpace = lightOrientation * glm::vec4(frustumCenter, 1.0f);
