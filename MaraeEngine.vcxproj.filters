@@ -53,6 +53,12 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <Filter Include="MCP"><UniqueIdentifier>{a7ff0fb8-4bf2-4ca1-9be7-a648499f9cf9}</UniqueIdentifier></Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="MCP\\ProjectMcpServer.cpp"><Filter>MCP</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Core\Application.cpp">
       <Filter>Core</Filter>
