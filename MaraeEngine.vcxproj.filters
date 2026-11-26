@@ -56,7 +56,7 @@
     <Filter Include="MCP"><UniqueIdentifier>{a7ff0fb8-4bf2-4ca1-9be7-a648499f9cf9}</UniqueIdentifier></Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MCP\\ProjectMcpServer.cpp"><Filter>MCP</Filter></ClCompile>
+    <ClCompile Include="MCP\ProjectMcpServer.cpp"><Filter>MCP</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
@@ -443,7 +443,7 @@
     <ClInclude Include="Editor\Panels\LogicCircuit\LogicCircuitPanel.h">
       <Filter>Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\AssetDatabase\AssetDatabase.h">
+    <ClInclude Include="MCP\ProjectMcpServer.h">\n      <Filter>MCP</Filter>\n    </ClInclude>\n    <ClInclude Include="Assets\AssetDatabase\AssetDatabase.h">
       <Filter>Assets</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Assets\GUID\GUID.h">
