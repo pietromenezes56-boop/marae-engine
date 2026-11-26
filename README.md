@@ -35,4 +35,4 @@ Marae is a Windows-first, C++ game-engine project with 2D and 3D editor workflow
 
 Original Marae Engine source code is licensed under the MIT License in LICENSE, except where a file or directory states otherwise. Third-party components retain their own licenses. The Marae name, logos, and other brand assets are not licensed by the MIT grant.
 
-Project website: https://pietromenezes56-boop.github.io/marae-engine/
+Project website: [Marae Engine](https://pietromenezes56-boop.github.io/marae-engine/)
