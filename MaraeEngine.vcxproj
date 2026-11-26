@@ -224,6 +224,7 @@
     <ClCompile Include="Engine\DemoGames\RaceGame.cpp" />
     <ClCompile Include="Engine\DemoGames\SurvivalGame.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="MCP\\ProjectMcpServer.cpp" />
     <ClCompile Include="Math\Matrix4\Matrix4.cpp" />
     <ClCompile Include="Math\Vector2.cpp" />
     <ClCompile Include="Math\Vector3.cpp" />
@@ -284,6 +285,7 @@
     <ClCompile Include="Window\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MCP\\ProjectMcpServer.h" />
     <ClInclude Include="Assets\AssetDatabase\AssetDatabase.h" />
     <ClInclude Include="Assets\MaterialDatabase\MaterialDatabase.h" />
     <ClInclude Include="Camera\CameraController.h" />
