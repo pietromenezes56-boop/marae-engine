@@ -14,6 +14,7 @@
 #include "Renderer/VulkanRuntimeProbe.h"
 #include "Renderer/VulkanSmokeWindow.h"
 #include "Renderer/SceneRenderer/SceneRenderer.h"
+#include "MCP/ProjectMcpServer.h"
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -27,6 +28,10 @@
 #include <chrono>
 #include <cctype>
 #include <iterator>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 #ifdef _WIN32
 extern "C" __declspec(dllimport) unsigned long __stdcall GetModuleFileNameW(
     void* module, wchar_t* filename, unsigned long size);
@@ -224,6 +229,20 @@ static GraphicsAPI LoadPreferredGraphicsAPI()
 
 int main(int argc, char** argv)
 {
+    if (argc >= 2 && std::string(argv[1]) == "--mcp-server")
+    {
+        if (argc < 3)
+        {
+            std::cerr << "Uso: MaraeEngine.exe --mcp-server <pasta-do-projeto>\\n";
+            return 2;
+        }
+#ifdef _WIN32
+        _setmode(_fileno(stdin), _O_BINARY);
+        _setmode(_fileno(stdout), _O_BINARY);
+#endif
+        return ProjectMcpServer::Run(std::filesystem::path(argv[2]), std::cin, std::cout, std::cerr);
+    }
+
     if (argc >= 2 && std::string(argv[1]) == "--vulkan-probe")
         return VulkanRuntimeProbe::RunDiagnostics(std::cout) ? 0 : 2;
 
