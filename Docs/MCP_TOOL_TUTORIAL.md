@@ -9,13 +9,7 @@ Este guia ensina a conectar um cliente de IA ao servidor MCP local da Marae e a 
 - Um cliente de IA que aceite servidores MCP por `stdio`.
 - O caminho absoluto do executável e do projeto.
 
-Para esta compilação de desenvolvimento, o executável verificado foi gerado em:
-
-```text
-C:\Users\drika\OneDrive\Documentos\Marae Engine\MaraeEngine\_build_verify_mcp\MaraeEngine.exe
-```
-
-Em outra máquina, use o caminho do executável que você compilou. Não aponte o servidor para `Assets`: informe a pasta raiz do projeto, que contém `Assets`.
+Use o caminho do executável que você compilou ou recebeu. A compilação isolada desta implementação gerou `MaraeEngine.exe` em uma pasta temporária de verificação, que não faz parte do repositório. Não aponte o servidor para `Assets`: informe a pasta raiz do projeto, que contém `Assets`.
 
 ## 2. Configurar o cliente MCP
 
